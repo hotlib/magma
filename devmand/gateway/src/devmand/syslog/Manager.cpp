@@ -31,7 +31,7 @@ void Manager::removeIdentifier(
     if (it->second == id) {
       identifiers.erase(it);
       // TODO should add back old one perhaps? idk
-      configGenerator.remove(configTemplate, identifer, id);
+//      configGenerator.remove(configTemplate, identifer, id);
       break;
     }
   }

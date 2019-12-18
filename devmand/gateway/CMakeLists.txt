@@ -120,6 +120,7 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/ParsingUtils.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/StructuredUbntDevice.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/ModelRegistry.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/ReaderRegistry.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/Spd2Glog.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/IoConfigurationBuilder.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/ReadCachingCli.cpp
@@ -203,6 +204,7 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/utils/Log.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/CommandTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ModelRegistryTest.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ReaderRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PlaintextCliDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/StructuredUbntDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/DemoDeviceTest.cpp
@@ -245,3 +247,5 @@ include(cmake/${CMAKE_BUILD_TYPE}.cmake)
 
 list(APPEND CMAKE_CXX_FLAGS "${CMAKE_CXX_WARNINGS}")
 string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")

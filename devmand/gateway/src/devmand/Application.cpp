@@ -43,8 +43,8 @@ Application::Application()
 void Application::init() {
   ErrorHandler::executeWithCatch(
       [this]() -> void {
+//        snmpEngine = addEngine<channels::snmp::Engine>(eventBase, name);
         cliEngine = addEngine<channels::cli::Engine>();
-        snmpEngine = addEngine<channels::snmp::Engine>(eventBase, name);
         pingEngine =
             addEngine<channels::ping::Engine>(eventBase, IPVersion::v4);
         pingEngineIpv6 =

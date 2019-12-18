@@ -12,6 +12,7 @@
 #include <ydk/json_subtree_codec.hpp>
 #include <ydk/path_api.hpp>
 #include <mutex>
+#include <regex>
 #include <sstream>
 
 namespace devmand {
@@ -28,7 +29,7 @@ class Model {
   ~Model() = default;
 
  protected:
-  explicit Model(std::string _dir) : dir(_dir) {}
+  explicit Model(string _dir) : dir(_dir) {}
 
  private:
   const string dir;
@@ -43,6 +44,17 @@ class Model {
 
   static const Model OPENCONFIG_0_1_6;
   static const Model IETF_0_1_5;
+};
+
+class RootDataNode {
+ private:
+  map<string, shared_ptr<DataNode>> children;
+
+ public:
+  RootDataNode(map<string, shared_ptr<DataNode>> _children) : children(_children) {};
+//  RootDataNode(map<string, shared_ptr<Entity>> _children, RootSchemaNode& rootSchema);
+  RootDataNode(DataNode& dataNode);
+  map<string, shared_ptr<DataNode>> getChildren();
 };
 
 class Bundle {
@@ -60,10 +72,41 @@ class Bundle {
   Repository repo;
   CodecServiceProvider codecServiceProvider;
   JsonSubtreeCodec jsonSubtreeCodec;
+  Codec jsonCodec;
 
  public:
-  std::string encode(Entity& entity);
+  // Binding aware API
+  string encode(Entity& entity);
   shared_ptr<Entity> decode(const string& payload, shared_ptr<Entity> pointer);
+
+  // Binding independent (DOM) API
+  string encode(DataNode& dataNode);
+  shared_ptr<DataNode> decode(const string& payload);
+
+  // Binding independent (DOM) API for ROOT
+  string encodeRoot(RootDataNode& dataNode);
+  shared_ptr<RootDataNode> decodeRoot(const string& payload);
+
+  // DOM -> BA
+//  shared_ptr<DataNode> toDOM(shared_ptr<Entity> entity);
+//  shared_ptr<Entity> fromDOM(shared_ptr<DataNode>);
+
+  SchemaNode& findSchemaNode(string path);
+  RootSchemaNode& rootSchemaNode();
+};
+
+class Path {
+ private:
+  Path(string _path) : path(_path){};
+  string path;
+
+ public:
+  static Path makePath(Bundle& bundle, string path);
+
+  friend ostream& operator<<(ostream& _stream, Path const& p) {
+    _stream << p.path;
+    return _stream;
+  }
 };
 
 class ModelRegistry {
@@ -81,25 +124,49 @@ class ModelRegistry {
 
  private:
   mutex lock; // A bundle is expected to be shared, protect it
-  std::map<string, Bundle> cache;
+  map<string, Bundle> cache;
 };
 
-class SerializationException : public std::exception {
+class SerializationException : public exception {
  private:
   string msg;
 
  public:
+  SerializationException(string _cause) {
+    msg = _cause;
+  };
+
   SerializationException(Entity& _entity, string _cause) {
-    std::stringstream buffer;
+    stringstream buffer;
     buffer << "Failed to encode: " << typeid(_entity).name() << " due to "
            << _cause;
     msg = buffer.str();
   };
 
-  SerializationException(shared_ptr<Entity>& _entity, string _cause) {
-    std::stringstream buffer;
-    buffer << "Failed to decode: " << typeid(*_entity).name() << " due to "
+  SerializationException(DataNode& _entity, string _cause) {
+    stringstream buffer;
+    buffer << "Failed to encode: " << typeid(_entity).name() << " due to "
            << _cause;
+    msg = buffer.str();
+  };
+
+  SerializationException(shared_ptr<Entity>& _entity, string _cause)
+      : SerializationException(*_entity, _cause){};
+
+ public:
+  const char* what() const throw() override {
+    return msg.c_str();
+  }
+};
+
+class SchemaException : public exception {
+ private:
+  string msg;
+
+ public:
+  SchemaException(string prefix, string path, string _cause) {
+    stringstream buffer;
+    buffer << prefix << path << " due to " << _cause;
     msg = buffer.str();
   };
 
