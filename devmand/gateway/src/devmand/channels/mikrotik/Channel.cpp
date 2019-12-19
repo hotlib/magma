@@ -149,7 +149,7 @@ void Channel::connect() {
 
   socket = folly::AsyncSocket::newSocket(&eventBase);
   if (socket != nullptr) {
-    socket->connect(this, address, 0);
+    socket->connect(this, address, (int)connectTimeout.count());
   } else {
     LOG(ERROR) << "socket new failed";
   }

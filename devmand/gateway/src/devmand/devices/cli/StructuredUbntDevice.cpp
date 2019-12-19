@@ -17,6 +17,7 @@
 #include <ydk_openconfig/openconfig_interfaces.hpp>
 #include <ydk_openconfig/openconfig_network_instance.hpp>
 #include <ydk_openconfig/openconfig_vlan_types.hpp>
+#include <ydk/entity_lookup.hpp>
 #include <memory>
 #include <regex>
 #include <unordered_map>
@@ -122,7 +123,7 @@ static void parseEthernetCounters(
   parseLeaf(output, outDisc, ctr->out_discards, 1, toUI64);
   parseLeaf(output, outErrors, ctr->out_errors, 1, toUI64);
 
-  parseLeaf<string>(output, counterReset, ctr->last_clear, 1);
+  //parseLeaf<string>(output, counterReset, ctr->last_clear, 1);
 }
 
 static const auto mtuState = regex(R"(Max Frame Size.*?(\d+).*)");
@@ -355,7 +356,41 @@ shared_ptr<State> StructuredUbntDevice::getState() {
 
   auto ifcs = parseIfcs(*channel);
   string json = bundle.encode(*ifcs);
-  folly::dynamic dynamicIfcs = folly::parseJson(json);
+    const shared_ptr<DataNode> &ptr = bundle.decode(json);
+    const vector<std::shared_ptr<DataNode>> &vector = ptr->find(
+            "openconfig-interfaces:interfaces/interface/state/admin-status");
+
+    for ( auto c : vector) {
+        MLOG(MINFO) << "PATH c: " << c->get_path() << " VALUE: " << c->get_value();
+        c->set_value("DOWN");
+    }
+
+    //ptr->create_datanode("openconfig-interfaces:interfaces/interface[name='0/2']/name", "0/2");
+    //ptr->create_datanode("openconfig-interfaces:interface[name='0/2']/name", "0/2");
+    //ptr->create_datanode("openconfig-interfaces:interface[name='0/2']/name", "0/2");
+    //ptr->
+    const unordered_map <std::string, path::Capability> &map = ydk::get_global_capabilities_lookup_tables();
+    for ( auto c : map) {
+        MLOG(MINFO) << "VYPIS: " << c.first ;
+    }
+
+
+
+//    for ( auto c : ptr->get_children()) {
+//    MLOG(MINFO) << "PATH c: " << c->get_path();
+//        for ( auto d : c->get_children()) {
+//            MLOG(MINFO) << "PATH d: " << d->get_path();
+//           // d->create_datanode("name", "0/2");
+//            for ( auto e : d->get_children()) {
+//                MLOG(MINFO) << "PATH e: " << e->get_path() << " VALUE: " << e->get_value();
+//                for ( auto f : e->get_children()) {
+//                    MLOG(MINFO) << "PATH f: " << f->get_path() << " VALUE: " << f->get_value();
+//                }
+//            }
+//        }
+//}
+
+    folly::dynamic dynamicIfcs = folly::parseJson(json);
 
   auto networks = parseNetworks(*channel);
   json = bundle.encode(*networks);

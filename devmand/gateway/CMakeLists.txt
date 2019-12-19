@@ -218,7 +218,7 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/PingChannelTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/SnmpChannelTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ReconnectingSshTest.cpp
-        )
+        ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/YangYdkParsingTest.cpp)
 
 target_link_libraries(devmantest
   devman
@@ -236,6 +236,7 @@ include (CTest)
 add_test(devmantest devmantest)
 
 set(CMAKE_CXX_COMPILER gcc)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 
 if(CMAKE_CXX_COMPILER MATCHES ".*clang.*")
   include(cmake/clang.cmake)
