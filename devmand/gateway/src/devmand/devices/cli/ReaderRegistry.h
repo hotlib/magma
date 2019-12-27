@@ -64,7 +64,8 @@ class ReaderRegistry {
     for (const auto& root : rootReaders) {
       shared_ptr<Entity> entity = root.read();
 
-      DataNode& node = get_data_node_from_entity(*entity, bundle.rootSchemaNode());
+      DataNode& node =
+          get_data_node_from_entity(*entity, bundle.rootSchemaNode());
       roots[entity->get_segment_path()] = shared_ptr<DataNode>(&node);
     }
 

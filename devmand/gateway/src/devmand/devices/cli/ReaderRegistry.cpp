@@ -6,7 +6,6 @@ namespace cli {
 using namespace std;
 using namespace ydk;
 
-
 } // namespace cli
 } // namespace devices
 } // namespace devmand

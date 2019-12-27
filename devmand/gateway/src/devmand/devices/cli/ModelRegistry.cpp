@@ -158,7 +158,7 @@ map<string, shared_ptr<DataNode>> RootDataNode::getChildren() {
   return children;
 }
 
-//RootDataNode::RootDataNode(
+// RootDataNode::RootDataNode(
 //    map<string, shared_ptr<Entity>> _children,
 //    RootSchemaNode& _rootSchema) {
 //  map<string, shared_ptr<DataNode>> transformed;

@@ -27,27 +27,24 @@ using namespace devmand::test::utils::json;
 using namespace std;
 using namespace devmand::devices::cli;
 
+static const char* if_data =
+    "{\n"
+    "\"openconfig-interfaces:interfaces\": {\n"
+    "\"interface\": [\n"
+    "{\n"
+    "\"name\": \"0/11\",\n"
+    "\"config\": {\n"
+    "\"name\": \"0/11\",\n"
+    "\"type\": \"iana-if-type:ethernetCsmacd\",\n"
 
-    static const char* if_data =
-            "{\n"
-            "\"openconfig-interfaces:interfaces\": {\n"
-            "\"interface\": [\n"
-            "{\n"
-            "\"name\": \"0/11\",\n"
-            "\"config\": {\n"
-            "\"name\": \"0/11\",\n"
-            "\"type\": \"iana-if-type:ethernetCsmacd\",\n"
+    "\"enabled\": true\n"
+    "}\n"
+    "}\n"
+    "]\n"
+    "}\n"
+    "}";
 
-            "\"enabled\": true\n"
-            "}\n"
-            "}\n"
-            "]\n"
-            "}\n"
-            "}";
-
-
-
-//static const char* if_data =
+// static const char* if_data =
 //    "{\n"
 //    "\"openconfig-interfaces:interfaces\": {\n"
 //    "\"interface\": [\n"
@@ -77,13 +74,12 @@ static const char *if_data = "{\n"
                              "    \"interface\": [\n"
                              "      {\n"
                              "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/2\",\n"
+                             "          \"description\": \"This is ifc 0/2\",\n"
                              "          \"enabled\": true,\n"
                              "          \"mtu\": 1500,\n"
                              "          \"name\": \"0/2\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/2\",\n"
+                             "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        },\n" "        \"name\": \"0/2\",\n"
                              "        \"state\": {\n"
                              "          \"admin-status\": \"UP\",\n"
                              "          \"counters\": {\n"
@@ -105,235 +101,106 @@ static const char *if_data = "{\n"
                              "          \"mtu\": 1518,\n"
                              "          \"name\": \"0/2\",\n"
                              "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/3\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/3\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/3\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/3\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/4\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/4\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/4\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/4\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/5\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/5\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/5\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/5\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/6\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/6\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/6\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/6\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/7\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/7\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/7\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/7\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  0/8\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"0/8\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"0/8\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"0/8\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      },\n"
-                             "      {\n"
-                             "        \"config\": {\n"
-                             "          \"description\": \"This is ifc  3/6\",\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1500,\n"
-                             "          \"name\": \"3/6\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        },\n"
-                             "        \"name\": \"3/6\",\n"
-                             "        \"state\": {\n"
-                             "          \"admin-status\": \"UP\",\n"
-                             "          \"counters\": {\n"
-                             "            \"in-broadcast-pkts\": 2767644,\n"
-                             "            \"in-discards\": 0,\n"
-                             "            \"in-errors\": 0,\n"
-                             "            \"in-multicast-pkts\": 5769311,\n"
-                             "            \"in-octets\": 427066814515,\n"
-                             "            \"in-unicast-pkts\": 293117,\n"
-                             "            \"out-broadcast-pkts\": 7628,\n"
-                             "            \"out-discards\": 0,\n"
-                             "            \"out-errors\": 0,\n"
-                             "            \"out-multicast-pkts\": 325039,\n"
-                             "            \"out-octets\": 72669652,\n"
-                             "            \"out-unicast-pkts\": 125182\n"
-                             "          },\n"
-                             "          \"enabled\": true,\n"
-                             "          \"mtu\": 1518,\n"
-                             "          \"name\": \"3/6\",\n"
-                             "          \"oper-status\": \"DOWN\",\n"
-                             "          \"type\": \"iana-if-type:ethernetCsmacd\"\n"
-                             "        }\n"
-                             "      }\n"
-                             "    ]\n"
-                             "  }\n"
+                             "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/3\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/3\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/3\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/3\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/4\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/4\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/4\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/4\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/5\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/5\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/5\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/5\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/6\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/6\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/6\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/6\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/7\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/7\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/7\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/7\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  0/8\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"0/8\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"0/8\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"0/8\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      },\n" "      {\n" "
+\"config\": {\n" "          \"description\": \"This is ifc  3/6\",\n" "
+\"enabled\": true,\n" "          \"mtu\": 1500,\n" "          \"name\":
+\"3/6\",\n" "          \"type\": \"iana-if-type:ethernetCsmacd\"\n" " },\n" "
+\"name\": \"3/6\",\n" "        \"state\": {\n" "          \"admin-status\":
+\"UP\",\n" "          \"counters\": {\n" "            \"in-broadcast-pkts\":
+2767644,\n" "            \"in-discards\": 0,\n" "            \"in-errors\":
+0,\n" "            \"in-multicast-pkts\": 5769311,\n" " \"in-octets\":
+427066814515,\n" "            \"in-unicast-pkts\": 293117,\n" "
+\"out-broadcast-pkts\": 7628,\n" "            \"out-discards\": 0,\n" "
+\"out-errors\": 0,\n" "            \"out-multicast-pkts\": 325039,\n" "
+\"out-octets\": 72669652,\n" "            \"out-unicast-pkts\": 125182\n" "
+},\n" "          \"enabled\": true,\n" "          \"mtu\": 1518,\n" " \"name\":
+\"3/6\",\n" "          \"oper-status\": \"DOWN\",\n" "          \"type\":
+\"iana-if-type:ethernetCsmacd\"\n" "        }\n" "      }\n" "    ]\n" "  }\n"
                              "}";
 
 
@@ -452,8 +319,6 @@ static const char *if_data = "{\n"
     "}";
 */
 
-
-
 class YangYdkParsingTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -465,103 +330,103 @@ class YangYdkParsingTest : public ::testing::Test {
 TEST_F(YangYdkParsingTest, parsetest) {
   ly_ctx* ctx = ly_ctx_new("/usr/share/openconfig@0.1.6/", 0);
 
-//  ly_ctx_load_module(ctx, "iana-crypt-hash", NULL);
+  //  ly_ctx_load_module(ctx, "iana-crypt-hash", NULL);
   ly_ctx_load_module(ctx, "iana-if-type", NULL);
-//  ly_ctx_load_module(ctx, "ietf-diffserv-action", NULL);
-//  ly_ctx_load_module(ctx, "ietf-diffserv-classifier", NULL);
-//  ly_ctx_load_module(ctx, "ietf-diffserv-policy", NULL);
-//  ly_ctx_load_module(ctx, "ietf-diffserv-target", NULL);
-//  ly_ctx_load_module(ctx, "ietf-event-notifications", NULL);
-//  ly_ctx_load_module(ctx, "ietf-inet-types", NULL);
-//  ly_ctx_load_module(ctx, "ietf-interfaces-ext", NULL);
- // ly_ctx_load_module(ctx, "ietf-interfaces", NULL);
-//  ly_ctx_load_module(ctx, "ietf-ip", NULL);
-//  ly_ctx_load_module(ctx, "ietf-ipv4-unicast-routing", NULL);
-//  ly_ctx_load_module(ctx, "ietf-ipv6-unicast-routing", NULL);
-//  ly_ctx_load_module(ctx, "ietf-key-chain", NULL);
-//  ly_ctx_load_module(ctx, "ietf-netconf-acm", NULL);
-//  ly_ctx_load_module(ctx, "ietf-netconf-monitoring", NULL);
-//  ly_ctx_load_module(ctx, "ietf-netconf-notifications", NULL);
-//  ly_ctx_load_module(ctx, "ietf-netconf-with-defaults", NULL);
-//  ly_ctx_load_module(ctx, "ietf-netconf", NULL);
-//  ly_ctx_load_module(ctx, "ietf-ospf", NULL);
-//  ly_ctx_load_module(ctx, "ietf-restconf-monitoring", NULL);
-//  ly_ctx_load_module(ctx, "ietf-routing", NULL);
-//  ly_ctx_load_module(ctx, "ietf-syslog-types", NULL);
-//  ly_ctx_load_module(ctx, "ietf-yang-library", NULL);
-//  ly_ctx_load_module(ctx, "ietf-yang-push", NULL);
-//  ly_ctx_load_module(ctx, "ietf-yang-smiv2", NULL);
-//  ly_ctx_load_module(ctx, "ietf-yang-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-acl", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-common", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-ethernet", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-ipv4", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-ipv6", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-mpls", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-network-instance", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-pf", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-aft", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-common-multiprotocol", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-common-structure", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-common", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-global", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-neighbor", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-peer-group", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-policy", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-bgp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-channel-monitor", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-extensions", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-if-aggregate", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-if-ethernet", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-if-ip", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-inet-types", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-diffserv-action", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-diffserv-classifier", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-diffserv-policy", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-diffserv-target", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-event-notifications", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-inet-types", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-interfaces-ext", NULL);
+  // ly_ctx_load_module(ctx, "ietf-interfaces", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-ip", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-ipv4-unicast-routing", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-ipv6-unicast-routing", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-key-chain", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-netconf-acm", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-netconf-monitoring", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-netconf-notifications", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-netconf-with-defaults", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-netconf", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-ospf", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-restconf-monitoring", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-routing", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-syslog-types", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-yang-library", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-yang-push", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-yang-smiv2", NULL);
+  //  ly_ctx_load_module(ctx, "ietf-yang-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-acl", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-common", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-ethernet", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-ipv4", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-ipv6", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-mpls", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-network-instance", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-pf", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-aft", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-common-multiprotocol", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-common-structure", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-common", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-global", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-neighbor", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-peer-group", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-policy", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-bgp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-channel-monitor", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-extensions", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-if-aggregate", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-if-ethernet", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-if-ip", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-inet-types", NULL);
   ly_ctx_load_module(ctx, "openconfig-interfaces", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis-lsdb-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis-lsp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis-policy", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis-routing", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-isis", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-lacp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-lldp-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-lldp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-local-routing", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-igp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-ldp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-rsvp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-sr", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-static", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-te", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-mpls", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-network-instance-l2", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-network-instance-l3", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-network-instance-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-network-instance", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-optical-amplifier", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-packet-match-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-packet-match", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-platform-transceiver", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-platform-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-platform", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-policy-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-rib-bgp-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-rib-bgp", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-routing-policy", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-rsvp-sr-ext", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-segment-routing", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-telemetry", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-terminal-device", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-transport-line-common", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-transport-line-protection", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-transport-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-vlan-types", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-vlan", NULL);
-//  ly_ctx_load_module(ctx, "openconfig-yang-types", NULL);
-//  ly_ctx_load_module(ctx, "policy-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis-lsdb-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis-lsp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis-policy", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis-routing", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-isis", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-lacp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-lldp-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-lldp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-local-routing", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-igp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-ldp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-rsvp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-sr", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-static", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-te", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-mpls", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-network-instance-l2", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-network-instance-l3", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-network-instance-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-network-instance", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-optical-amplifier", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-packet-match-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-packet-match", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-platform-transceiver", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-platform-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-platform", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-policy-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-rib-bgp-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-rib-bgp", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-routing-policy", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-rsvp-sr-ext", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-segment-routing", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-telemetry", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-terminal-device", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-transport-line-common", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-transport-line-protection", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-transport-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-vlan-types", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-vlan", NULL);
+  //  ly_ctx_load_module(ctx, "openconfig-yang-types", NULL);
+  //  ly_ctx_load_module(ctx, "policy-types", NULL);
 
   // MLOG(MDEBUG) << if_data;
   //  (void)pModule;

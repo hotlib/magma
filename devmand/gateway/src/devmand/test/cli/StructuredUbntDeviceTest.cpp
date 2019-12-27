@@ -432,7 +432,7 @@ TEST_F(StructuredUbntDeviceTest, getState) {
   std::shared_ptr<State> state = dev->getState();
   const folly::dynamic& stateResult = state->collect().get();
 
- // EXPECT_EQ(folly::parseJson(EXPECTED_OUTPUT), stateResult);
+  // EXPECT_EQ(folly::parseJson(EXPECTED_OUTPUT), stateResult);
 }
 
 } // namespace cli

@@ -51,8 +51,10 @@ class RootDataNode {
   map<string, shared_ptr<DataNode>> children;
 
  public:
-  RootDataNode(map<string, shared_ptr<DataNode>> _children) : children(_children) {};
-//  RootDataNode(map<string, shared_ptr<Entity>> _children, RootSchemaNode& rootSchema);
+  RootDataNode(map<string, shared_ptr<DataNode>> _children)
+      : children(_children){};
+  //  RootDataNode(map<string, shared_ptr<Entity>> _children, RootSchemaNode&
+  //  rootSchema);
   RootDataNode(DataNode& dataNode);
   map<string, shared_ptr<DataNode>> getChildren();
 };
@@ -88,8 +90,8 @@ class Bundle {
   shared_ptr<RootDataNode> decodeRoot(const string& payload);
 
   // DOM -> BA
-//  shared_ptr<DataNode> toDOM(shared_ptr<Entity> entity);
-//  shared_ptr<Entity> fromDOM(shared_ptr<DataNode>);
+  //  shared_ptr<DataNode> toDOM(shared_ptr<Entity> entity);
+  //  shared_ptr<Entity> fromDOM(shared_ptr<DataNode>);
 
   SchemaNode& findSchemaNode(string path);
   RootSchemaNode& rootSchemaNode();
