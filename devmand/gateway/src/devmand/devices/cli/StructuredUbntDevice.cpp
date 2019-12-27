@@ -6,6 +6,7 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <devmand/channels/cli/Cli.h>
+#include <devmand/channels/cli/DatastoreTransaction.h>
 #include <devmand/channels/cli/IoConfigurationBuilder.h>
 #include <devmand/devices/State.h>
 #include <devmand/devices/cli/ModelRegistry.h>
@@ -21,8 +22,6 @@
 #include <memory>
 #include <regex>
 #include <unordered_map>
-#include <devmand/channels/cli/DatastoreTransaction.h>
-
 
 namespace devmand {
 namespace devices {
@@ -318,12 +317,12 @@ StructuredUbntDevice::StructuredUbntDevice(
       mreg(_mreg) {}
 
 void StructuredUbntDevice::setConfig(const dynamic& config) {
-    MLOG(MDEBUG) << "IAM HERE";
-    const string& json = folly::toJson(config);
-    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
-    const shared_ptr<OpenconfigInterfaces>& ydkModel =
+  MLOG(MDEBUG) << "IAM HERE";
+  const string& json = folly::toJson(config);
+  auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
+  const shared_ptr<OpenconfigInterfaces>& ydkModel =
       make_shared<OpenconfigInterfaces>();
-    const shared_ptr<Entity> decodedIfcEntity = bundle.decode(json, ydkModel);
+  const shared_ptr<Entity> decodedIfcEntity = bundle.decode(json, ydkModel);
 
   for (shared_ptr<Entity> entity : ydkModel->interface.entities()) {
     shared_ptr<OpenconfigInterface> iface =
@@ -357,25 +356,29 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   // the json step is unnecessary
 
   auto ifcs = parseIfcs(*channel);
-   // const vector<std::pair<std::string, ydk::LeafData>> &leafData = ifcs->get_name_leaf_data();
-    DatastoreTransaction transaction;
-//    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
-    transaction.create(ifcs);
-//    for (const auto& a : ifcs->get_children()) {
-//        MLOG(MINFO) << "DIETA: " << a.first << " cela cesta " << a.second->get_absolute_path() << " relativna cesta " << a.second->get_segment_path();
-//
-//
-//    }
+  // const vector<std::pair<std::string, ydk::LeafData>> &leafData =
+  // ifcs->get_name_leaf_data();
+  DatastoreTransaction transaction(mreg);
+  //    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
+  transaction.create(ifcs);
+  transaction.read<Ifc>(string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
+  //    for (const auto& a : ifcs->get_children()) {
+  //        MLOG(MINFO) << "DIETA: " << a.first << " cela cesta " <<
+  //        a.second->get_absolute_path() << " relativna cesta " <<
+  //        a.second->get_segment_path();
+  //
+  //
+  //    }
 
   string json = bundle.encode(*ifcs);
   const shared_ptr<DataNode>& ptr = bundle.decode(json);
   const vector<std::shared_ptr<DataNode>>& vector = ptr->find(
       "openconfig-interfaces:interfaces/interface/state/admin-status");
 
-//  for (auto c : vector) {
-//    MLOG(MINFO) << "PATH c: " << c->get_path() << " VALUE: " << c->get_value();
-//    c->set_value("DOWN");
-//  }
+  //  for (auto c : vector) {
+  //    MLOG(MINFO) << "PATH c: " << c->get_path() << " VALUE: " <<
+  //    c->get_value(); c->set_value("DOWN");
+  //  }
 
   // ptr->create_datanode("openconfig-interfaces:interfaces/interface[name='0/2']/name",
   // "0/2");
@@ -389,20 +392,21 @@ shared_ptr<State> StructuredUbntDevice::getState() {
     MLOG(MINFO) << "VYPIS: " << c.first;
   }
 
-//      for ( auto c : ptr->get_children()) {
-//      MLOG(MINFO) << "PATH c: " << c->get_path();
-//          for ( auto d : c->get_children()) {
-//              MLOG(MINFO) << "PATH d: " << d->get_path();
-//             // d->create_datanode("name", "0/2");
-//              for ( auto e : d->get_children()) {
-//                  MLOG(MINFO) << "PATH e: " << e->get_path() << " VALUE: " <<
-//                  e->get_value(); for ( auto f : e->get_children()) {
-//                      MLOG(MINFO) << "PATH f: " << f->get_path() << " VALUE: "
-//                      << f->get_value();
-//                  }
-//              }
-//          }
-//  }
+  //      for ( auto c : ptr->get_children()) {
+  //      MLOG(MINFO) << "PATH c: " << c->get_path();
+  //          for ( auto d : c->get_children()) {
+  //              MLOG(MINFO) << "PATH d: " << d->get_path();
+  //             // d->create_datanode("name", "0/2");
+  //              for ( auto e : d->get_children()) {
+  //                  MLOG(MINFO) << "PATH e: " << e->get_path() << " VALUE: "
+  //                  << e->get_value(); for ( auto f : e->get_children()) {
+  //                      MLOG(MINFO) << "PATH f: " << f->get_path() << " VALUE:
+  //                      "
+  //                      << f->get_value();
+  //                  }
+  //              }
+  //          }
+  //  }
 
   folly::dynamic dynamicIfcs = folly::parseJson(json);
 
