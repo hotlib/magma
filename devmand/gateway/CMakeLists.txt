@@ -132,7 +132,12 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliThreadWheelTimekeeper.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliTimekeeperWrapper.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliTimekeeperWrapper.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CancelableWTCallback.h src/devmand/channels/cli/DatastoreTransaction.cpp src/devmand/channels/cli/DatastoreTransaction.h)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CancelableWTCallback.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/Datastore.cpp
+        ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/Datastore.h
+        ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/DatastoreTransaction.cpp
+        ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/DatastoreTransaction.h
+        ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/DatastoreState.h)
 
 target_link_libraries(devman_channel_cli
   devman)

@@ -6,6 +6,7 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <devmand/channels/cli/Cli.h>
+#include <devmand/channels/cli/Datastore.h>
 #include <devmand/channels/cli/DatastoreTransaction.h>
 #include <devmand/channels/cli/IoConfigurationBuilder.h>
 #include <devmand/devices/State.h>
@@ -358,10 +359,14 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   auto ifcs = parseIfcs(*channel);
   // const vector<std::pair<std::string, ydk::LeafData>> &leafData =
   // ifcs->get_name_leaf_data();
-  DatastoreTransaction transaction(mreg);
-  //    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
-  transaction.create(ifcs);
-  transaction.read<Ifc>(string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
+  Datastore datastore(mreg);
+    std::unique_ptr<DatastoreTransaction> transaction = datastore.newTx();
+    //    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
+    transaction->create(ifcs);
+    //
+    //transaction.read<Ifc>(string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
+    transaction->delete2(
+        string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
   //    for (const auto& a : ifcs->get_children()) {
   //        MLOG(MINFO) << "DIETA: " << a.first << " cela cesta " <<
   //        a.second->get_absolute_path() << " relativna cesta " <<

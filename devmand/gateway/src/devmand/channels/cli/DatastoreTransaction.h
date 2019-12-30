@@ -7,51 +7,52 @@
 
 #pragma once
 
-#include <libyang/libyang.h>
-#include <ydk/types.hpp>
+#include <devmand/channels/cli/DatastoreState.h>
 #include <devmand/devices/cli/ModelRegistry.h>
+#include <libyang/libyang.h>
 #include <magma_logging.h>
+#include <ydk/types.hpp>
 
+using std::make_shared;
 using std::map;
 using std::pair;
 using std::shared_ptr;
 using std::string;
-using std::make_shared;
 using ydk::Entity;
 using LeafVector = std::vector<pair<string, string>>;
-using devmand::devices::cli::ModelRegistry;
 using devmand::devices::cli::Model;
+using devmand::devices::cli::ModelRegistry;
+using devmand::channels::cli::DatastoreState;
 
-namespace devmand {
-namespace channels {
-namespace cli {
+namespace devmand::channels::cli {
 
 class DatastoreTransaction {
  private:
-  ly_ctx* ctx;
-  lyd_node* root;
+  DatastoreState datastoreState;
+  lyd_node* root = nullptr;
   shared_ptr<ModelRegistry> mreg;
 
- private:
   void writeLeafs(LeafVector& leafs);
   void print();
   string toJson(lyd_node* initial);
 
  public:
-  DatastoreTransaction(shared_ptr<ModelRegistry> mreg);
+  DatastoreTransaction(
+      DatastoreState datastoreState,
+      const shared_ptr<ModelRegistry> _mreg);
 
-  template<typename T>
-  shared_ptr<Entity> read(string path) {
-      ly_set *pSet = lyd_find_path(root, const_cast<char *>(path.c_str()));
-      if(pSet->number != 1) {
-          throw std::runtime_error("Too many results from path: " + path);
-      }
-      auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
+  template <typename T>
+  shared_ptr<T> read(string path) {
+    ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
+    if (pSet->number != 1) {
+      throw std::runtime_error("Too many results from path: " + path);
+    }
+    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
 
-      const shared_ptr<T>& ydkModel = make_shared<T>();
-      const string &json = toJson(pSet->set.d[0]);
-      MLOG(MINFO) << "json: " << json;
-      return bundle.decode(json, ydkModel);
+    const shared_ptr<T>& ydkModel = make_shared<T>();
+    const string& json = toJson(pSet->set.d[0]);
+    MLOG(MINFO) << "json: " << json;
+    return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
   }
 
   void delete2(string path);
@@ -61,6 +62,4 @@ class DatastoreTransaction {
 
   void commit();
 };
-} // namespace cli
-} // namespace channels
-} // namespace devmand
+} // namespace devmand::channels::cli
