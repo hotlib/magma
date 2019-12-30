@@ -12,8 +12,13 @@
 namespace devmand::channels::cli {
 
 struct DatastoreState {
-  ly_ctx* ctx;
-  lyd_node* root;
+  ly_ctx* ctx = nullptr;
+  lyd_node* root = nullptr;
+
+ public:
+  bool isEmpty() {
+    return root == nullptr;
+  }
 };
 
 typedef struct DatastoreState DatastoreState;

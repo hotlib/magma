@@ -8,8 +8,8 @@
 #pragma once
 
 #include <devmand/channels/cli/DatastoreState.h>
-#include <devmand/devices/cli/ModelRegistry.h>
 #include <devmand/channels/cli/DatastoreTransaction.h>
+#include <devmand/devices/cli/ModelRegistry.h>
 
 #include <libyang/libyang.h>
 
@@ -30,8 +30,8 @@ class Datastore {
  private:
   shared_ptr<ModelRegistry> mreg;
 
-   public:
-    unique_ptr<DatastoreTransaction>
-    newTx(); // operations on transaction are NOT thread-safe
+ public:
+  unique_ptr<DatastoreTransaction>
+  newTx(); // operations on transaction are NOT thread-safe
 };
 } // namespace devmand::channels::cli

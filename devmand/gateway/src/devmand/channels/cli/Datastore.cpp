@@ -16,7 +16,7 @@ Datastore::Datastore(const shared_ptr<ModelRegistry> _mreg) : mreg(_mreg) {
   ly_ctx_load_module(datastoreState.ctx, "openconfig-interfaces", NULL);
 }
 
- unique_ptr<DatastoreTransaction> Datastore::newTx() {
+unique_ptr<DatastoreTransaction> Datastore::newTx() {
   return make_unique<DatastoreTransaction>(datastoreState, mreg);
 }
 } // namespace devmand::channels::cli

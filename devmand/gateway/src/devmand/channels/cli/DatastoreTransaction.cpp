@@ -10,7 +10,7 @@
 
 namespace devmand::channels::cli {
 
-void DatastoreTransaction::delete2(string path) {
+void DatastoreTransaction::delete_(string path) {
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
   MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   for (unsigned int j = 0; j < pSet->number; ++j) {
@@ -33,7 +33,19 @@ void DatastoreTransaction::create(shared_ptr<Entity> entity) {
   print();
 }
 
-void DatastoreTransaction::commit() {}
+void DatastoreTransaction::commit() {
+  if (datastoreState.isEmpty()) {
+    datastoreState.root = root;
+  } else {
+    if (lyd_validate(&root, LYD_OPT_CONFIG, nullptr) == 0) {
+      lyd_merge(datastoreState.root, root, LYD_OPT_DESTRUCT);
+    } else {
+      throw std::runtime_error("model is invalid, won't commit");
+    }
+  }
+
+  print(datastoreState.root);
+}
 
 void DatastoreTransaction::createLeafs(
     shared_ptr<Entity> entity,
@@ -72,11 +84,15 @@ void DatastoreTransaction::writeLeafs(LeafVector& leafs) {
   }
 }
 
-void DatastoreTransaction::print() {
+void DatastoreTransaction::print(lyd_node* nodeToPrint) {
   char* buff;
-  lyd_print_mem(&buff, root, LYD_XML, 0);
+  lyd_print_mem(&buff, nodeToPrint, LYD_XML, 0);
   MLOG(MINFO) << "current datatree (as XML):";
   MLOG(MINFO) << buff;
+}
+
+void DatastoreTransaction::print() {
+  print(root);
 }
 
 string DatastoreTransaction::toJson(lyd_node* initial) {

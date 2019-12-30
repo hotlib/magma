@@ -360,13 +360,19 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   // const vector<std::pair<std::string, ydk::LeafData>> &leafData =
   // ifcs->get_name_leaf_data();
   Datastore datastore(mreg);
-    std::unique_ptr<DatastoreTransaction> transaction = datastore.newTx();
-    //    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
-    transaction->create(ifcs);
-    //
-    //transaction.read<Ifc>(string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
-    transaction->delete2(
-        string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
+  std::unique_ptr<DatastoreTransaction> transaction = datastore.newTx();
+  //    MLOG(MINFO) << "velkost: " << ifcs->get_children().size();
+  transaction->create(ifcs);
+  //
+  // transaction.read<Ifc>(string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
+  transaction->commit();
+  MLOG(MINFO) << "prva transaction v poriadku";
+  std::unique_ptr<DatastoreTransaction> transaction2 = datastore.newTx();
+  LOG(INFO) << "az sem sme sa dostali";
+  transaction2->create(ifcs);
+
+  transaction2->delete_(
+      string("/openconfig-interfaces:interfaces/interface[name='0/2']"));
   //    for (const auto& a : ifcs->get_children()) {
   //        MLOG(MINFO) << "DIETA: " << a.first << " cela cesta " <<
   //        a.second->get_absolute_path() << " relativna cesta " <<
@@ -374,6 +380,8 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   //
   //
   //    }
+  transaction2->commit();
+  MLOG(MINFO) << "druha transaction v poriadku";
 
   string json = bundle.encode(*ifcs);
   const shared_ptr<DataNode>& ptr = bundle.decode(json);

@@ -20,9 +20,9 @@ using std::shared_ptr;
 using std::string;
 using ydk::Entity;
 using LeafVector = std::vector<pair<string, string>>;
+using devmand::channels::cli::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
-using devmand::channels::cli::DatastoreState;
 
 namespace devmand::channels::cli {
 
@@ -34,6 +34,8 @@ class DatastoreTransaction {
 
   void writeLeafs(LeafVector& leafs);
   void print();
+  void print(lyd_node* nodeToPrint);
+
   string toJson(lyd_node* initial);
 
  public:
@@ -55,7 +57,7 @@ class DatastoreTransaction {
     return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
   }
 
-  void delete2(string path);
+  void delete_(string path);
   void createLeafs(shared_ptr<Entity> entity, string init, LeafVector& leafs);
   void write(string path, shared_ptr<Entity> entity);
   void create(shared_ptr<Entity> entity);
