@@ -369,7 +369,7 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   MLOG(MINFO) << "prva transaction v poriadku";
   std::unique_ptr<DatastoreTransaction> transaction2 = datastore.newTx();
   LOG(INFO) << "az sem sme sa dostali";
-  transaction2->create(ifcs);
+  // transaction2->create(ifcs);
 
   transaction2->delete_(
       string("/openconfig-interfaces:interfaces/interface[name='0/2']"));

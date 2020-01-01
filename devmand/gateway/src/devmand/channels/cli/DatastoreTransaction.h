@@ -28,10 +28,11 @@ namespace devmand::channels::cli {
 
 class DatastoreTransaction {
  private:
-  DatastoreState datastoreState;
+  DatastoreState& datastoreState;
   lyd_node* root = nullptr;
   shared_ptr<ModelRegistry> mreg;
-
+  void validateBeforeCommit();
+  static lyd_node* computeRoot(lyd_node* n);
   void writeLeafs(LeafVector& leafs);
   void print();
   void print(lyd_node* nodeToPrint);
@@ -40,7 +41,7 @@ class DatastoreTransaction {
 
  public:
   DatastoreTransaction(
-      DatastoreState datastoreState,
+      DatastoreState& datastoreState,
       const shared_ptr<ModelRegistry> _mreg);
 
   template <typename T>

@@ -17,7 +17,7 @@ struct DatastoreState {
 
  public:
   bool isEmpty() {
-    return root == nullptr;
+    return root == nullptr || ctx == nullptr;
   }
 };
 

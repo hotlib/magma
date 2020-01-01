@@ -7,6 +7,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/DatastoreTransaction.h>
+#include <libyang/tree_data.h>
 
 namespace devmand::channels::cli {
 
@@ -34,17 +35,31 @@ void DatastoreTransaction::create(shared_ptr<Entity> entity) {
 }
 
 void DatastoreTransaction::commit() {
-  if (datastoreState.isEmpty()) {
-    datastoreState.root = root;
-  } else {
-    if (lyd_validate(&root, LYD_OPT_CONFIG, nullptr) == 0) {
-      lyd_merge(datastoreState.root, root, LYD_OPT_DESTRUCT);
-    } else {
-      throw std::runtime_error("model is invalid, won't commit");
-    }
+  validateBeforeCommit();
+  lyd_node* rootToBeMerged = computeRoot(
+      root); // need the real root for convenience and copy via lyd_dup
+  if (!datastoreState.isEmpty()) {
+    lyd_free(datastoreState.root);
   }
+  datastoreState.root = rootToBeMerged;
 
   print(datastoreState.root);
+}
+
+void DatastoreTransaction::validateBeforeCommit() {
+  string error;
+  if (root == nullptr) {
+    error.assign(
+        "datastore is empty and no changes performed, nothing to commit");
+  }
+  if (lyd_validate(&root, LYD_OPT_CONFIG, nullptr) !=
+      0) { // TODO what validation options ??
+    error.assign("model is invalid, won't commit changes to the datastore");
+  }
+  if (!error.empty()) {
+    MLOG(MERROR) << error;
+    throw std::runtime_error(error);
+  }
 }
 
 void DatastoreTransaction::createLeafs(
@@ -79,7 +94,8 @@ void DatastoreTransaction::writeLeafs(LeafVector& leafs) {
         LYD_ANYDATA_STRING,
         LYD_PATH_OPT_UPDATE);
     if (root == nullptr) {
-      root = node; // any node in tree will do
+      root =
+          node; // any node in tree will do (doesn't have to be the actual root)
     }
   }
 }
@@ -102,8 +118,19 @@ string DatastoreTransaction::toJson(lyd_node* initial) {
 }
 
 DatastoreTransaction::DatastoreTransaction(
-    struct DatastoreState _datastoreState,
+    struct DatastoreState& _datastoreState,
     const shared_ptr<ModelRegistry> _mreg)
-    : datastoreState(_datastoreState), mreg(_mreg) {}
+    : datastoreState(_datastoreState), mreg(_mreg) {
+  if (not datastoreState.isEmpty()) {
+    root = lyd_dup(datastoreState.root, 1);
+  }
+}
+
+lyd_node* DatastoreTransaction::computeRoot(lyd_node* n) {
+  while (n->parent != nullptr) {
+    n = n->parent;
+  }
+  return n;
+}
 
 } // namespace devmand::channels::cli
