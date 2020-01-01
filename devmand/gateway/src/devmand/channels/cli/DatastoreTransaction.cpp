@@ -12,6 +12,7 @@
 namespace devmand::channels::cli {
 
 void DatastoreTransaction::delete_(string path) {
+  checkIfCommitted();
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
   MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   for (unsigned int j = 0; j < pSet->number; ++j) {
@@ -21,6 +22,8 @@ void DatastoreTransaction::delete_(string path) {
 }
 
 void DatastoreTransaction::write(string path, shared_ptr<Entity> entity) {
+  checkIfCommitted();
+
   LeafVector leafs;
   createLeafs(entity, path, leafs);
   writeLeafs(leafs);
@@ -28,14 +31,13 @@ void DatastoreTransaction::write(string path, shared_ptr<Entity> entity) {
 }
 
 void DatastoreTransaction::create(shared_ptr<Entity> entity) {
-  LeafVector leafs;
-  createLeafs(entity, string(""), leafs);
-  writeLeafs(leafs);
-  print();
+  write("", entity);
 }
 
 void DatastoreTransaction::commit() {
-  validateBeforeCommit();
+  checkIfCommitted();
+
+  // validateBeforeCommit();
   lyd_node* rootToBeMerged = computeRoot(
       root); // need the real root for convenience and copy via lyd_dup
   if (!datastoreState.isEmpty()) {
@@ -43,6 +45,7 @@ void DatastoreTransaction::commit() {
   }
   datastoreState.root = rootToBeMerged;
 
+  hasCommited.store(true);
   print(datastoreState.root);
 }
 
@@ -103,8 +106,8 @@ void DatastoreTransaction::writeLeafs(LeafVector& leafs) {
 void DatastoreTransaction::print(lyd_node* nodeToPrint) {
   char* buff;
   lyd_print_mem(&buff, nodeToPrint, LYD_XML, 0);
-  MLOG(MINFO) << "current datatree (as XML):";
   MLOG(MINFO) << buff;
+  free(buff);
 }
 
 void DatastoreTransaction::print() {
@@ -114,7 +117,9 @@ void DatastoreTransaction::print() {
 string DatastoreTransaction::toJson(lyd_node* initial) {
   char* buff;
   lyd_print_mem(&buff, initial, LYD_JSON, 0);
-  return string(buff);
+  string result(buff);
+  free(buff);
+  return result;
 }
 
 DatastoreTransaction::DatastoreTransaction(
@@ -131,6 +136,61 @@ lyd_node* DatastoreTransaction::computeRoot(lyd_node* n) {
     n = n->parent;
   }
   return n;
+}
+
+void DatastoreTransaction::diff() {
+  checkIfCommitted();
+  if (datastoreState.isEmpty()) {
+    throw std::runtime_error(
+        "Unable to diff, datastore tree does not yet exist");
+  }
+  lyd_difflist* difflist =
+      lyd_diff(datastoreState.root, root, LYD_DIFFOPT_WITHDEFAULTS);
+  if (!difflist) {
+    throw std::runtime_error("something went wrong, no diff possible");
+  }
+
+  for (int j = 0; difflist->type[j] != LYD_DIFF_END; ++j) {
+    printDiffType(difflist->type[j]);
+    print(difflist->first[j]);
+  }
+
+  lyd_free_diff(difflist);
+}
+
+DatastoreTransaction::~DatastoreTransaction() {
+  if (not hasCommited && root != nullptr) {
+    lyd_free(root);
+  }
+}
+
+void DatastoreTransaction::checkIfCommitted() {
+  if (hasCommited) {
+    throw std::runtime_error(
+        "transaction already committed, no operations available");
+  }
+}
+
+void DatastoreTransaction::printDiffType(LYD_DIFFTYPE type) {
+  switch (type) {
+    case LYD_DIFF_DELETED:
+      MLOG(MINFO) << "deleted subtree:";
+      break;
+    case LYD_DIFF_CHANGED:
+      MLOG(MINFO) << "changed value:";
+      break;
+    case LYD_DIFF_MOVEDAFTER1:
+      MLOG(MINFO) << "subtree was moved one way:";
+      break;
+    case LYD_DIFF_MOVEDAFTER2:
+      MLOG(MINFO) << "subtree was moved another way:";
+      break;
+    case LYD_DIFF_CREATED:
+      MLOG(MINFO) << "subtree was added:";
+      break;
+    case LYD_DIFF_END:
+      throw std::runtime_error("LYD_DIFF_END can never be printed");
+  }
 }
 
 } // namespace devmand::channels::cli

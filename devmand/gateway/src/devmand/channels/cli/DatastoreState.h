@@ -15,6 +15,16 @@ struct DatastoreState {
   ly_ctx* ctx = nullptr;
   lyd_node* root = nullptr;
 
+  virtual ~DatastoreState() {
+    if (root != nullptr) {
+      lyd_free(root);
+    }
+    if (ctx != nullptr) {
+      ly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or each
+                                    // datastore has a private one???
+    }
+  }
+
  public:
   bool isEmpty() {
     return root == nullptr || ctx == nullptr;

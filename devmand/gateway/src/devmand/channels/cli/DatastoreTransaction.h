@@ -12,6 +12,7 @@
 #include <libyang/libyang.h>
 #include <magma_logging.h>
 #include <ydk/types.hpp>
+#include <atomic>
 
 using std::make_shared;
 using std::map;
@@ -23,7 +24,7 @@ using LeafVector = std::vector<pair<string, string>>;
 using devmand::channels::cli::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
-
+using std::atomic_bool;
 namespace devmand::channels::cli {
 
 class DatastoreTransaction {
@@ -31,13 +32,16 @@ class DatastoreTransaction {
   DatastoreState& datastoreState;
   lyd_node* root = nullptr;
   shared_ptr<ModelRegistry> mreg;
+  atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void validateBeforeCommit();
   static lyd_node* computeRoot(lyd_node* n);
   void writeLeafs(LeafVector& leafs);
   void print();
+  static void printDiffType(LYD_DIFFTYPE type);
   void print(lyd_node* nodeToPrint);
-
+  void checkIfCommitted();
   string toJson(lyd_node* initial);
+  void createLeafs(shared_ptr<Entity> entity, string init, LeafVector& leafs);
 
  public:
   DatastoreTransaction(
@@ -46,6 +50,8 @@ class DatastoreTransaction {
 
   template <typename T>
   shared_ptr<T> read(string path) {
+    checkIfCommitted();
+
     ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
     if (pSet->number != 1) {
       throw std::runtime_error("Too many results from path: " + path);
@@ -58,11 +64,13 @@ class DatastoreTransaction {
     return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
   }
 
+  void diff();
   void delete_(string path);
-  void createLeafs(shared_ptr<Entity> entity, string init, LeafVector& leafs);
   void write(string path, shared_ptr<Entity> entity);
   void create(shared_ptr<Entity> entity);
 
   void commit();
+
+  virtual ~DatastoreTransaction();
 };
 } // namespace devmand::channels::cli

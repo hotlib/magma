@@ -380,6 +380,7 @@ shared_ptr<State> StructuredUbntDevice::getState() {
   //
   //
   //    }
+  transaction2->diff();
   transaction2->commit();
   MLOG(MINFO) << "druha transaction v poriadku";
 
