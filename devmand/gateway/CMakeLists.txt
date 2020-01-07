@@ -56,8 +56,7 @@ add_library(devman
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/FileUtils.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/FileWatcher.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/Time.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/utils/YangUtils.cpp
-)
+  ${PROJECT_SOURCE_DIR}/src/devmand/utils/YangUtils.cpp)
 
 target_link_libraries(devman
   boost_context
@@ -144,7 +143,15 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliThreadWheelTimekeeper.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliTimekeeperWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CancelableWTCallback.h
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/LoggingCli.cpp)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/LoggingCli.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreDiff.h)
 
 target_link_libraries(devman_channel_cli
   devman)
@@ -251,6 +258,7 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ReaderRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PluginRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/BindingContextTest.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/DatastoreTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PlaintextCliDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/StructuredUbntDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/DemoDeviceTest.cpp

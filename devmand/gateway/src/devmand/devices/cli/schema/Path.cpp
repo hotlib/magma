@@ -23,10 +23,12 @@ const Path Path::ROOT = Path(PATH_SEPARATOR);
 
 Path::Path(const string& _path) : path(_path) {
   if (_path.empty()) {
+    MLOG(MWARNING) << "empty path created";
     throw InvalidPathException(path, "Empty path");
   }
   // equivalent to _path.startsWith(PATH_SEPARATOR)
   if (_path.rfind(PATH_SEPARATOR, 0) != 0) {
+    MLOG(MWARNING) << "path separator not found";
     throw InvalidPathException(path, "Not an absolute path");
   }
 
@@ -35,6 +37,7 @@ Path::Path(const string& _path) : path(_path) {
   // pre-cache segments and unkeyed version
 }
 
+// TODO description
 vector<string> Path::getSegments() const {
   if (ROOT == *this) {
     return vector<string>();
@@ -222,7 +225,7 @@ Path::Keys Path::getKeysFromSegment(string segment) const {
 
 // TODO make Keys a proper class and move serialize/parse there
 
-static const auto KEY_IN_PATH = regex("([^=]*)=\"([^\"]*)\"");
+static const auto KEY_IN_PATH = regex("([^=]*)=\'([^\']*)\'");
 static const string KEY_SEPARATOR = ",";
 
 const Path::Keys Path::parseKeys(string keys) {
@@ -254,7 +257,7 @@ const string Path::serializeKeys(Keys keys) {
   stringstream keysAsString;
   keysAsString << "[";
   for (const auto& keyName : keys.keys()) {
-    keysAsString << keyName << "=\"" << keys[keyName] << "\"";
+    keysAsString << keyName << "='" << keys[keyName] << "'";
   }
   keysAsString << "]";
   return keysAsString.str();
@@ -295,8 +298,16 @@ bool operator>=(const Path& lhs, const Path& rhs) {
   return !(lhs < rhs);
 }
 
+Path operator+(const Path& lhs, const Path& rhs) {
+  return Path(lhs.str() + rhs.str());
+}
+
 string Path::str() const {
   return path;
+}
+
+bool Path::empty() const {
+  return path.empty();
 }
 
 } // namespace cli

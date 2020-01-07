@@ -184,9 +184,8 @@ class IfcCountersReader : public BindingReader {
   using Ifc = openconfig::openconfig_interfaces::Interfaces::Interface;
 
  public:
-  Future<shared_ptr<Entity>> read(
-      const Path& path,
-      const DeviceAccess& device) const override {
+  Future<shared_ptr<Entity>> read(const Path& path, const DeviceAccess& device)
+      const override {
     string ifcName = path.getKeysFromSegment("interface")["name"].getString();
 
     // If is not ethernet interface, do not read anything

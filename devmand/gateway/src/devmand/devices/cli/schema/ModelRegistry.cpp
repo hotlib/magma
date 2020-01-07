@@ -38,9 +38,10 @@ BindingContext& ModelRegistry::getBindingContext(const Model& model) {
   if (it != bindingCache.end()) {
     return it->second;
   } else {
-    auto pair = bindingCache.emplace(piecewise_construct,
-                forward_as_tuple(model.getDir()),
-                forward_as_tuple(model, schemaCtx));
+    auto pair = bindingCache.emplace(
+        piecewise_construct,
+        forward_as_tuple(model.getDir()),
+        forward_as_tuple(model, schemaCtx));
     return pair.first->second;
   }
 }

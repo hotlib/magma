@@ -143,12 +143,17 @@ dynamic BindingCodec::toDom(Path path, Entity& entity) {
   }
   try {
     string key = path.prefixAllSegments().unkeyed().getLastSegment();
-    return dynamic::object(key, toDynamicRecurs(path, entity, schemaCtx));
+    if (schemaCtx.isList(path.unkeyed())) {
+      return dynamic::object(
+          key, dynamic::array(toDynamicRecurs(path, entity, schemaCtx)));
+    } else {
+      return dynamic::object(key, toDynamicRecurs(path, entity, schemaCtx));
+    }
   } catch (runtime_error& e) {
     throw BindingSerializationException(
         entity,
-        "Unable to serialize entity on path: " + path.str() + " due to: " +
-            e.what());
+        "Unable to serialize entity on path: " + path.str() +
+            " due to: " + e.what());
   }
 }
 
@@ -166,6 +171,20 @@ string BindingCodec::encode(Entity& entity) {
 shared_ptr<Entity> BindingCodec::fromDom(
     const dynamic& payload,
     shared_ptr<Entity> pointer) {
+  dynamic key = payload.items().begin()->first;
+  dynamic value = payload.items().begin()->second;
+  if (value.isArray()) {
+    if (value.size() > 1) {
+      throw BindingSerializationException(
+          pointer,
+          "Unable to parse entity, DOM contains an array with multiple entries: " +
+              payload.asString());
+    }
+    // for lists, there should be an array in dynamic, however ydk cannot
+    // process that so strip the array
+    return decode(folly::toJson(dynamic::object(key, value[0])), pointer);
+  }
+
   // Using json step to simplify parsing
   return decode(folly::toJson(payload), pointer);
 }
@@ -174,7 +193,6 @@ shared_ptr<Entity> BindingCodec::decode(
     const string& payload,
     shared_ptr<Entity> pointer) {
   lock_guard<std::mutex> lg(lock);
-
   try {
     return jsonSubtreeCodec.decode(payload, pointer);
   } catch (std::exception& e) {

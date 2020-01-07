@@ -105,28 +105,7 @@ bool SchemaContext::isConfig(Path path) const {
   return result;
 }
 
-bool SchemaContext::isPathValid(Path path) const {
-  if (path == Path::ROOT) {
-    return true;
-  }
-
-  void* schema =
-      llly_path_data2schema(ctx, const_cast<char*>(path.str().c_str()));
-  auto result = schema != nullptr;
-  free(schema);
-  return result;
-}
-
-SchemaContext::~SchemaContext() {
-  llly_ctx_destroy(ctx, nullptr);
-}
-
-SchemaContext::SchemaContext(const Model& _model) : model(_model.getDir()) {
-  // set extensions and user_types for non-YDK libyang
-  setenv("LLLIBYANG_EXTENSIONS_PLUGINS_DIR", LLLIBYANG_EXTENSIONS_PLUGINS_DIR, false);
-  setenv("LIBYANG_USER_TYPES_PLUGINS_DIR", LIBYANG_USER_TYPES_PLUGINS_DIR, false);
-  ctx = llly_ctx_new(_model.getDir().c_str(), LLLY_CTX_ALLIMPLEMENTED);
-
+void SchemaContext::loadModules(llly_ctx* context, const Model& _model) {
   int modelCount = 0;
   int failedModelCount = 0;
 
@@ -142,7 +121,7 @@ SchemaContext::SchemaContext(const Model& _model) : model(_model.getDir()) {
       }
       auto modelName = p.path().filename().replace_extension();
       modelCount++;
-      if (!llly_ctx_load_module(ctx, modelName.string().c_str(), NULL)) {
+      if (!llly_ctx_load_module(context, modelName.string().c_str(), NULL)) {
         failedModelCount++;
         MLOG(MWARNING) << "Unable to parse model: " << p.path() << ". Ignoring";
       };
@@ -159,6 +138,35 @@ SchemaContext::SchemaContext(const Model& _model) : model(_model.getDir()) {
         "Unable to parse schema context from " + _model.getDir() +
         " due to: " + e.what());
   }
+}
+
+bool SchemaContext::isPathValid(Path path) const {
+  if (path == Path::ROOT) {
+    return true;
+  }
+
+  void* schema =
+      llly_path_data2schema(ctx, const_cast<char*>(path.str().c_str()));
+
+  auto result = schema != nullptr;
+  free(schema);
+  return result;
+}
+
+SchemaContext::~SchemaContext() {
+  llly_ctx_destroy(ctx, nullptr);
+}
+
+SchemaContext::SchemaContext(const Model& _model) : model(_model.getDir()) {
+  // set extensions and user_types for non-YDK libyang
+  setenv(
+      "LLLIBYANG_EXTENSIONS_PLUGINS_DIR",
+      LLLIBYANG_EXTENSIONS_PLUGINS_DIR,
+      false);
+  setenv(
+      "LIBYANG_USER_TYPES_PLUGINS_DIR", LIBYANG_USER_TYPES_PLUGINS_DIR, false);
+  ctx = llly_ctx_new(_model.getDir().c_str(), LLLY_CTX_ALLIMPLEMENTED);
+  loadModules(ctx, _model);
 }
 
 llly_set* SchemaContext::getNodes(Path path) const {
@@ -194,4 +202,8 @@ bool SchemaContext::operator==(const SchemaContext& rhs) const {
 bool SchemaContext::operator!=(const SchemaContext& rhs) const {
   return !(rhs == *this);
 }
+
+    llly_ctx *SchemaContext::getLyContext() const {
+        return ctx;
+    }
 } // namespace devmand::devices::cli

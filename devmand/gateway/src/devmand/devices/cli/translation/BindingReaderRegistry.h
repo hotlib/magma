@@ -122,7 +122,9 @@ class BindingReaderRegistryBuilder {
   BindingContext& context;
 
  public:
-  BindingReaderRegistryBuilder(ReaderRegistryBuilder& _domBuilder, BindingContext& _context)
+  BindingReaderRegistryBuilder(
+      ReaderRegistryBuilder& _domBuilder,
+      BindingContext& _context)
       : domBuilder(_domBuilder), context(_context){};
   // No validation against schema will be performed with NO_MODELS context
   ~BindingReaderRegistryBuilder() = default;

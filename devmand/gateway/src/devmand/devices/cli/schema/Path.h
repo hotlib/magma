@@ -48,6 +48,7 @@ class Path {
   const Path addKeys(Keys keys) const;
   const Path addKeysToSegment(string segment, Keys keys) const;
   Keys getKeys() const;
+  bool empty() const;
   Keys getKeysFromSegment(string segment) const;
 
   static const Path joinSegments(vector<string> segments);
@@ -63,6 +64,7 @@ class Path {
   friend bool operator>(const Path& lhs, const Path& rhs);
   friend bool operator<=(const Path& lhs, const Path& rhs);
   friend bool operator>=(const Path& lhs, const Path& rhs);
+  friend Path operator+(const Path& lhs, const Path& rhs);
 };
 
 class InvalidPathException : public runtime_error {

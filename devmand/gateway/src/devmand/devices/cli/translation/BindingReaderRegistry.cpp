@@ -24,11 +24,13 @@ void BindingReaderRegistryBuilder::addReader(
 Future<dynamic> BindingReaderAdapter::read(
     const Path& path,
     const DeviceAccess& device) const {
-  return bindingReader->read(path, device).thenValue([path, &context = this->context](auto entity) {
-    dynamic asDynamic = context.getCodec().toDom(path, *entity);
-    // the object is prefixed with its name inside dynamic, extract the object
-    return asDynamic.items().begin()->second;
-  });
+  return bindingReader->read(path, device)
+      .thenValue([path, &context = this->context](auto entity) {
+        dynamic asDynamic = context.getCodec().toDom(path, *entity);
+        // the object is prefixed with its name inside dynamic, extract the
+        // object
+        return asDynamic.items().begin()->second;
+      });
 }
 
 BindingReaderAdapter::BindingReaderAdapter(

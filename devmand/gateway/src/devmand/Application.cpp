@@ -44,11 +44,13 @@ void Application::init() {
   ErrorHandler::executeWithCatch(
       [this]() -> void {
         cliEngine = addEngine<channels::cli::Engine>();
-//        snmpEngine = addEngine<channels::snmp::Engine>(eventBase, name);
-//        pingEngine =
-//            addEngine<channels::ping::Engine>(eventBase, IPVersion::v4);
-//        pingEngineIpv6 =
-//            addEngine<channels::ping::Engine>(eventBase, IPVersion::v6);
+        //        snmpEngine = addEngine<channels::snmp::Engine>(eventBase,
+        //        name); pingEngine =
+        //            addEngine<channels::ping::Engine>(eventBase,
+        //            IPVersion::v4);
+        //        pingEngineIpv6 =
+        //            addEngine<channels::ping::Engine>(eventBase,
+        //            IPVersion::v6);
       },
       [this]() { this->statusCode = EXIT_FAILURE; });
 }
