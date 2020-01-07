@@ -125,7 +125,13 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/TimeoutTrackingCli.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/KeepaliveCli.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/ReconnectingCli.cpp
-        )
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h)
 
 target_link_libraries(devman_channel_cli
   devman)
