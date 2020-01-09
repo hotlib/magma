@@ -37,6 +37,7 @@ class BindingAwareDatastoreTransaction {
   void delete_(string path);
   void write(string path, shared_ptr<Entity> entity);
   void create(shared_ptr<Entity> entity);
+  bool isValid();
 
   void commit();
 };

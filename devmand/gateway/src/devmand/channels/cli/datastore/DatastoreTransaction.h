@@ -44,7 +44,7 @@ class DatastoreTransaction {
   void print();
   static void print(LeafVector& v);
   static void printDiffType(LYD_DIFFTYPE type);
-  std::vector<string> fixSegments(std::vector<string> str); //TODO hack
+  std::vector<string> fixSegments(std::vector<string> str); // TODO hack
   void print(lyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lyd_node* initial);
@@ -55,6 +55,7 @@ class DatastoreTransaction {
   dynamic read(string path);
 
   void diff();
+  bool isValid();
   void delete_(string path);
   void write(LeafVector& leafs);
   void write(const string path, const dynamic& aDynamic);

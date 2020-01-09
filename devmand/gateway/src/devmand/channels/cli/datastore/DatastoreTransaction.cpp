@@ -12,6 +12,8 @@
 
 namespace devmand::channels::cli::datastore {
 
+using std::runtime_error;
+
 void DatastoreTransaction::delete_(string path) {
   checkIfCommitted();
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
@@ -62,22 +64,14 @@ void DatastoreTransaction::commit() {
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
-  //print(datastoreState->root);
+  // print(datastoreState->root);
 }
 
 void DatastoreTransaction::validateBeforeCommit() {
-  string error;
-  if (root == nullptr) {
-    error.assign(
-        "datastore is empty and no changes performed, nothing to commit");
-  }
-  if (lyd_validate(&root, LYD_OPT_CONFIG, nullptr) !=
-      0) { // TODO what validation options ??
-    error.assign("model is invalid, won't commit changes to the datastore");
-  }
-  if (!error.empty()) {
+  if (!isValid()) {
+    string error = "model is invalid, won't commit changes to the datastore";
     MLOG(MERROR) << error;
-    throw std::runtime_error(error);
+    throw runtime_error(error);
   }
 }
 
@@ -135,13 +129,13 @@ lyd_node* DatastoreTransaction::computeRoot(lyd_node* n) {
 void DatastoreTransaction::diff() {
   checkIfCommitted();
   if (datastoreState->isEmpty()) {
-    throw std::runtime_error(
+    throw runtime_error(
         "Unable to diff, datastore tree does not yet exist");
   }
   lyd_difflist* difflist =
       lyd_diff(datastoreState->root, root, LYD_DIFFOPT_WITHDEFAULTS);
   if (!difflist) {
-    throw std::runtime_error("something went wrong, no diff possible");
+    throw runtime_error("something went wrong, no diff possible");
   }
 
   for (int j = 0; difflist->type[j] != LYD_DIFF_END; ++j) {
@@ -160,7 +154,7 @@ DatastoreTransaction::~DatastoreTransaction() {
 
 void DatastoreTransaction::checkIfCommitted() {
   if (hasCommited) {
-    throw std::runtime_error(
+    throw runtime_error(
         "transaction already committed, no operations available");
   }
 }
@@ -209,7 +203,7 @@ void DatastoreTransaction::printDiffType(LYD_DIFFTYPE type) {
       MLOG(MINFO) << "subtree was added:";
       break;
     case LYD_DIFF_END:
-      throw std::runtime_error("LYD_DIFF_END can never be printed");
+      throw runtime_error("LYD_DIFF_END can never be printed");
   }
 }
 
@@ -218,7 +212,7 @@ dynamic DatastoreTransaction::read(string path) {
 
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
   if (pSet->number != 1) {
-    throw std::runtime_error("Too many results from path: " + path);
+    throw runtime_error("Too many results from path: " + path);
   }
 
   const string& json = toJson(pSet->set.d[0]);
@@ -229,6 +223,15 @@ void DatastoreTransaction::print(LeafVector& v) {
   for (const auto& item : v) {
     MLOG(MINFO) << "full path: " << item.first << " data: " << item.second;
   }
+}
+
+bool DatastoreTransaction::isValid() {
+  if (root == nullptr) {
+    throw runtime_error(
+        "datastore is empty and no changes performed, nothing to validate");
+  }
+  // TODO what validation options (LYD_OPT_CONFIG..)??
+  return lyd_validate(&root, LYD_OPT_CONFIG, nullptr) == 0;
 }
 
 } // namespace devmand::channels::cli::datastore
