@@ -40,22 +40,14 @@ class DatastoreTransaction {
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void validateBeforeCommit();
   static lyd_node* computeRoot(lyd_node* n);
-  static string getData(const dynamic& d);
   void writeLeafs(LeafVector& leafs);
   void print();
   static void print(LeafVector& v);
   static void printDiffType(LYD_DIFFTYPE type);
-  std::vector<string> fixSegments(std::vector<string> str);
+  std::vector<string> fixSegments(std::vector<string> str); //TODO hack
   void print(lyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lyd_node* initial);
-  void traverseDynamic(
-      string currentPath,
-      const dynamic& aDynamic,
-      LeafVector& leafs);
-  static bool isCompositeType(const dynamic& aDynamic);
-  // static ListKeys lysGetKeys(struct lys_node * node);
-  lys_node_list* mightHaveKeys(string path);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
