@@ -24,7 +24,7 @@ using std::string;
 using ydk::Entity;
 using LeafVector = std::vector<pair<string, string>>;
 using ListKeys = std::vector<string>;
-using devmand::channels::cli::DatastoreState;
+using devmand::channels::cli::datastore::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
 using folly::dynamic;
