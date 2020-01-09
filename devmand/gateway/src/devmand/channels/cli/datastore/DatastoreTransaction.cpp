@@ -30,18 +30,11 @@ void DatastoreTransaction::write(LeafVector& leafs) {
 void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
   std::vector<string> strs;
 
-  (void)aDynamic;
-  (void)path;
-
   boost::split(strs, path, boost::is_any_of("/")); // TODO path empty??
   std::reverse(strs.begin(), strs.end());
 
   dynamic previous = aDynamic;
   for (const auto& pathSegment : fixSegments(strs)) {
-    MLOG(MINFO) << "segment: " << pathSegment;
-    if (pathSegment.empty()) {
-      continue;
-    }
     dynamic obj = dynamic::object;
     obj[pathSegment] = previous;
     previous = obj;
@@ -59,7 +52,7 @@ void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
 void DatastoreTransaction::commit() {
   checkIfCommitted();
 
-  // validateBeforeCommit();
+  // validateBeforeCommit(); //TODO not working
   lyd_node* rootToBeMerged = computeRoot(
       root); // need the real root for convenience and copy via lyd_dup
   if (!datastoreState->isEmpty()) {
@@ -69,7 +62,7 @@ void DatastoreTransaction::commit() {
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
-  print(datastoreState->root);
+  //print(datastoreState->root);
 }
 
 void DatastoreTransaction::validateBeforeCommit() {
@@ -229,103 +222,13 @@ dynamic DatastoreTransaction::read(string path) {
   }
 
   const string& json = toJson(pSet->set.d[0]);
-  MLOG(MINFO) << "json: " << json;
   return parseJson(json);
 }
-
-void DatastoreTransaction::traverseDynamic(
-    string currentPath,
-    const dynamic& aDynamic,
-    LeafVector& leafs) {
-  if (aDynamic.isArray()) {
-    for (const auto& arrayItem : aDynamic) {
-      if (isCompositeType(arrayItem)) {
-        traverseDynamic(currentPath, arrayItem, leafs);
-        continue;
-      }
-      leafs.emplace_back(std::make_pair(currentPath, getData(arrayItem)));
-    }
-  } else if (aDynamic.isObject()) {
-    for (const auto& objectItem : aDynamic.items()) {
-      string newPath = currentPath + "/" + objectItem.first.getString();
-      if (isCompositeType(objectItem.second)) {
-        traverseDynamic(newPath, objectItem.second, leafs);
-        continue;
-      }
-      leafs.emplace_back(std::make_pair(newPath, getData(objectItem.second)));
-    }
-  } else {
-    leafs.emplace_back(std::make_pair(currentPath, getData(aDynamic)));
-  }
-}
-
-bool DatastoreTransaction::isCompositeType(const dynamic& d) {
-  return d.isObject() || d.isArray();
-}
-
-//"/openconfig-interfaces:interfaces/interface"
-lys_node_list* DatastoreTransaction::mightHaveKeys(string path) {
-  const lys_module* pModule = ly_ctx_get_module(
-      datastoreState->ctx,
-      "openconfig-interfaces",
-      NULL,
-      0); // TODO name of model hardcoded
-  ly_set* pSet =
-      lys_find_path(pModule, pModule->data, const_cast<char*>(path.c_str()));
-
-  if (pSet->number != 1) {
-    throw std::runtime_error(
-        "There should have been a YANG model node for the query!");
-  }
-
-  if (pSet->set.s[0]->nodetype != LYS_LIST) {
-    return nullptr;
-  }
-
-  auto* list = (lys_node_list*)pSet->set.s[0];
-
-  if (list->keys_size == 0) {
-    return nullptr;
-  }
-
-  for (uint8_t i = 0; i < list->keys_size; i++) {
-    MLOG(MINFO) << "meno kluca: " << list->keys[i]->name;
-  }
-
-  return list;
-}
-
-//    ListKeys DatastoreTransaction::lysGetKeys (
-//    struct lys_node * node) {
-//        ListKeys keys;
-//    if (node->nodetype != LYS_LIST) {
-//        return nullptr;
-//    }
-//    auto *list = (lys_node_list *) node;
-//
-//    for (uint8_t i = 0; i < list->keys_size; i++) {
-//            MLOG(MINFO) << "meno kluca: " << list->keys[i]->name;
-//    }
-//
-//    return nullptr;
-//}
 
 void DatastoreTransaction::print(LeafVector& v) {
   for (const auto& item : v) {
     MLOG(MINFO) << "full path: " << item.first << " data: " << item.second;
   }
-}
-
-string DatastoreTransaction::getData(const dynamic& d) {
-  if (d.isBool()) {
-    return d.getBool() ? "true" : "false";
-  }
-
-  if (d.isInt()) {
-    return std::to_string(d.asInt());
-  }
-
-  return d.getString();
 }
 
 } // namespace devmand::channels::cli::datastore
