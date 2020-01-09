@@ -15,8 +15,8 @@
 #include <libyang/libyang.h>
 
 namespace devmand::channels::cli::datastore {
-using devmand::channels::cli::DatastoreState;
 using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
+using devmand::channels::cli::datastore::DatastoreState;
 using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::devices::cli::ModelRegistry;
 using std::shared_ptr;
@@ -26,6 +26,8 @@ class Datastore {
  private:
   shared_ptr<ModelRegistry> mreg;
   shared_ptr<DatastoreState> datastoreState;
+  void checkIfTransactionRunning();
+  void setTransactionRunning();
 
  public:
   Datastore(const shared_ptr<ModelRegistry> _mreg);

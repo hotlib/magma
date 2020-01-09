@@ -5,7 +5,6 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 
-#include <bits/basic_string.h>
 #include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <libyang/tree_data.h>
@@ -69,6 +68,7 @@ void DatastoreTransaction::commit() {
   datastoreState->root = rootToBeMerged;
 
   hasCommited.store(true);
+  datastoreState->transactionUnderway.store(false);
   print(datastoreState->root);
 }
 

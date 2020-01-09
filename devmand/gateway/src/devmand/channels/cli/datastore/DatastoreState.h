@@ -8,10 +8,12 @@
 #pragma once
 
 #include <libyang/libyang.h>
+#include <atomic>
 
-namespace devmand::channels::cli {
-
+namespace devmand::channels::cli::datastore {
+using std::atomic_bool;
 struct DatastoreState {
+  atomic_bool transactionUnderway = ATOMIC_VAR_INIT(false);
   ly_ctx* ctx = nullptr;
   lyd_node* root = nullptr;
 
@@ -34,4 +36,4 @@ struct DatastoreState {
 };
 
 typedef struct DatastoreState DatastoreState;
-} // namespace devmand::channels::cli
+} // namespace devmand::channels::cli::datastore
