@@ -18,6 +18,7 @@ namespace devmand::channels::cli::datastore {
 using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
 using devmand::channels::cli::datastore::DatastoreState;
 using devmand::channels::cli::datastore::DatastoreTransaction;
+using devmand::channels::cli::datastore::DatastoreType;
 using devmand::devices::cli::ModelRegistry;
 using std::shared_ptr;
 using std::unique_ptr;
@@ -30,7 +31,10 @@ class Datastore {
   void setTransactionRunning();
 
  public:
-  Datastore(const shared_ptr<ModelRegistry> _mreg);
+  static DatastoreType operational();
+  static DatastoreType config();
+
+  Datastore(const shared_ptr<ModelRegistry> _mreg, DatastoreType _type);
 
   unique_ptr<DatastoreTransaction>
   newTx(); // operations on transaction are NOT thread-safe

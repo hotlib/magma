@@ -11,11 +11,12 @@ namespace devmand::channels::cli::datastore {
 using std::make_unique;
 using std::runtime_error;
 
-Datastore::Datastore(const shared_ptr<ModelRegistry> _mreg) : mreg(_mreg) {
+Datastore::Datastore(const shared_ptr<ModelRegistry> _mreg, DatastoreType type)
+    : mreg(_mreg) {
   ly_ctx* pLyCtx = ly_ctx_new("/usr/share/openconfig@0.1.6/", 0);
   ly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
   ly_ctx_load_module(pLyCtx, "openconfig-interfaces", NULL);
-  datastoreState = make_shared<DatastoreState>(pLyCtx);
+  datastoreState = make_shared<DatastoreState>(pLyCtx, type);
 }
 
 unique_ptr<DatastoreTransaction> Datastore::newTx() {
@@ -39,5 +40,13 @@ void Datastore::checkIfTransactionRunning() {
 
 void Datastore::setTransactionRunning() {
   datastoreState->transactionUnderway.store(true);
+}
+
+DatastoreType Datastore::operational() {
+  return DatastoreType::operational;
+}
+
+DatastoreType Datastore::config() {
+  return DatastoreType::config;
 }
 } // namespace devmand::channels::cli::datastore

@@ -12,10 +12,14 @@
 
 namespace devmand::channels::cli::datastore {
 using std::atomic_bool;
+
+enum DatastoreType { config, operational };
+
 struct DatastoreState {
   atomic_bool transactionUnderway = ATOMIC_VAR_INIT(false);
   ly_ctx* ctx = nullptr;
   lyd_node* root = nullptr;
+  DatastoreType type;
 
   virtual ~DatastoreState() {
     if (root != nullptr) {
@@ -28,7 +32,7 @@ struct DatastoreState {
   }
 
  public:
-  DatastoreState(ly_ctx* _ctx) : ctx(_ctx) {}
+  DatastoreState(ly_ctx* _ctx, DatastoreType _type) : ctx(_ctx), type(_type) {}
 
   bool isEmpty() {
     return root == nullptr || ctx == nullptr;
