@@ -60,4 +60,8 @@ BindingAwareDatastoreTransaction::BindingAwareDatastoreTransaction(
     shared_ptr<ModelRegistry> _mreg)
     : datastoreTransaction(_datastoreState), mreg(_mreg) {}
 
+bool BindingAwareDatastoreTransaction::isValid() {
+  return datastoreTransaction.isValid();
+}
+
 } // namespace devmand::channels::cli::datastore
