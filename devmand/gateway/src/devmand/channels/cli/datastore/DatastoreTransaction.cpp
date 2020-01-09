@@ -129,8 +129,7 @@ lyd_node* DatastoreTransaction::computeRoot(lyd_node* n) {
 void DatastoreTransaction::diff() {
   checkIfCommitted();
   if (datastoreState->isEmpty()) {
-    throw runtime_error(
-        "Unable to diff, datastore tree does not yet exist");
+    throw runtime_error("Unable to diff, datastore tree does not yet exist");
   }
   lyd_difflist* difflist =
       lyd_diff(datastoreState->root, root, LYD_DIFFOPT_WITHDEFAULTS);
