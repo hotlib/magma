@@ -17,13 +17,21 @@ void DatastoreTransaction::delete_(string path) {
   for (unsigned int j = 0; j < pSet->number; ++j) {
     lyd_free(pSet->set.d[j]);
   }
-  print();
 }
 
-void DatastoreTransaction::write(LeafVector & leafs) {
+void DatastoreTransaction::write(LeafVector& leafs) {
+  print(leafs);
   checkIfCommitted();
   writeLeafs(leafs);
-  print();
+}
+
+void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
+  LeafVector leafs;
+    (void) path;
+    (void) aDynamic;
+  traverseDynamic(path, aDynamic, leafs);
+  write(leafs);
+  MLOG(MINFO) << "AAAAAAA";
 }
 
 void DatastoreTransaction::commit() {
@@ -162,5 +170,66 @@ void DatastoreTransaction::printDiffType(LYD_DIFFTYPE type) {
       throw std::runtime_error("LYD_DIFF_END can never be printed");
   }
 }
+
+dynamic DatastoreTransaction::read(string path) {
+  checkIfCommitted();
+
+  ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
+  if (pSet->number != 1) {
+    throw std::runtime_error("Too many results from path: " + path);
+  }
+
+  const string& json = toJson(pSet->set.d[0]);
+  MLOG(MINFO) << "json: " << json;
+  return parseJson(json);
+}
+
+void DatastoreTransaction::traverseDynamic(
+    string currentPath,
+    const dynamic& aDynamic,
+    LeafVector& leafs) {
+  if (aDynamic.isArray()) {
+    for (const auto& arrayItem : aDynamic) {
+      if (isCompositeType(arrayItem)) {
+        traverseDynamic(currentPath, arrayItem, leafs);
+        continue;
+      }
+      leafs.emplace_back(std::make_pair(currentPath, getData(arrayItem)));
+    }
+  } else if (aDynamic.isObject()) {
+    for (const auto& objectItem : aDynamic.items()) {
+      string newPath = currentPath + "/" + objectItem.first.getString();
+      if (isCompositeType(objectItem.second)) {
+        traverseDynamic(newPath, objectItem.second, leafs);
+        continue;
+      }
+      leafs.emplace_back(std::make_pair(newPath, getData(objectItem.second)));
+    }
+  } else {
+    leafs.emplace_back(std::make_pair(currentPath, getData(aDynamic)));
+  }
+}
+
+bool DatastoreTransaction::isCompositeType(const dynamic& d) {
+  return d.isObject() || d.isArray();
+}
+
+void DatastoreTransaction::print(LeafVector& v) {
+  for (const auto& item : v) {
+    MLOG(MINFO) << "full path: " << item.first << " data: " << item.second;
+  }
+}
+
+    string DatastoreTransaction::getData(const dynamic & d) {
+        if(d.isBool()){
+             return d.getBool() ? "true" : "false";
+        }
+
+        if(d.isInt()){
+            return std::to_string(d.asInt());
+        }
+
+        return d.getString();
+    }
 
 } // namespace devmand::channels::cli::datastore

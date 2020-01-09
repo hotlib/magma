@@ -39,33 +39,29 @@ class DatastoreTransaction {
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void validateBeforeCommit();
   static lyd_node* computeRoot(lyd_node* n);
+  static string getData(const dynamic & d);
   void writeLeafs(LeafVector& leafs);
   void print();
+  static void print(LeafVector& v);
   static void printDiffType(LYD_DIFFTYPE type);
   void print(lyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lyd_node* initial);
+  void traverseDynamic(
+      string currentPath,
+      const dynamic& aDynamic,
+      LeafVector& leafs);
+  static bool isCompositeType(const dynamic& aDynamic);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
-  dynamic read(string path) {
-    checkIfCommitted();
-
-    ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
-    if (pSet->number != 1) {
-      throw std::runtime_error("Too many results from path: " + path);
-    }
-
-    const string& json = toJson(pSet->set.d[0]);
-    MLOG(MINFO) << "json: " << json;
-    return parseJson(json);
-  }
+  dynamic read(string path);
 
   void diff();
   void delete_(string path);
-  void write(LeafVector & leafs);
-
+  void write(LeafVector& leafs);
+  void write(const string path, const dynamic& aDynamic);
   void commit();
 
   virtual ~DatastoreTransaction();

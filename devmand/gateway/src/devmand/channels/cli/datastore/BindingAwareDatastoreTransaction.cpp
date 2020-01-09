@@ -22,8 +22,6 @@ void BindingAwareDatastoreTransaction::write(
     string path,
     shared_ptr<Entity> entity) {
   LeafVector leafs;
-    (void) path;
-    (void) entity;
   createLeafs(entity, path, leafs);
   datastoreTransaction.write(leafs);
 }

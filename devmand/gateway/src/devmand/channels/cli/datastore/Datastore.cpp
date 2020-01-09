@@ -24,4 +24,4 @@ unique_ptr<DatastoreTransaction> Datastore::newTx() {
 unique_ptr<BindingAwareDatastoreTransaction> Datastore::newBindingTx() {
   return make_unique<BindingAwareDatastoreTransaction>(datastoreState, mreg);
 }
-} // namespace devmand::channels::cli
+} // namespace devmand::channels::cli::datastore
