@@ -5,8 +5,11 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 
+#include <bits/basic_string.h>
+#include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <libyang/tree_data.h>
+#include <libyang/tree_schema.h>
 
 namespace devmand::channels::cli::datastore {
 
@@ -20,18 +23,38 @@ void DatastoreTransaction::delete_(string path) {
 }
 
 void DatastoreTransaction::write(LeafVector& leafs) {
-  print(leafs);
+  // print(leafs);
   checkIfCommitted();
   writeLeafs(leafs);
 }
 
 void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
-  LeafVector leafs;
-    (void) path;
-    (void) aDynamic;
-  traverseDynamic(path, aDynamic, leafs);
-  write(leafs);
-  MLOG(MINFO) << "AAAAAAA";
+  std::vector<string> strs;
+
+  (void)aDynamic;
+  (void)path;
+
+  boost::split(strs, path, boost::is_any_of("/")); // TODO path empty??
+  std::reverse(strs.begin(), strs.end());
+
+  dynamic previous = aDynamic;
+  for (const auto& pathSegment : fixSegments(strs)) {
+    MLOG(MINFO) << "segment: " << pathSegment;
+    if (pathSegment.empty()) {
+      continue;
+    }
+    dynamic obj = dynamic::object;
+    obj[pathSegment] = previous;
+    previous = obj;
+  }
+
+  lyd_node* pNode = lyd_parse_mem(
+      datastoreState->ctx,
+      const_cast<char*>(folly::toJson(previous).c_str()),
+      LYD_JSON,
+      LYD_OPT_DATA | LYD_OPT_DATA_NO_YANGLIB);
+  delete_(path);
+  lyd_merge(root, pNode, LYD_OPT_DESTRUCT);
 }
 
 void DatastoreTransaction::commit() {
@@ -148,6 +171,32 @@ void DatastoreTransaction::checkIfCommitted() {
         "transaction already committed, no operations available");
   }
 }
+// TODO temporary hack
+std::vector<string> DatastoreTransaction::fixSegments(std::vector<string> str) {
+  std::vector<string> final;
+  string broken;
+  broken.assign("");
+
+  for (const auto& s : str) {
+    if (s.empty())
+      continue;
+    unsigned long found = s.find("'");
+    if (found != std::string::npos) {
+      if (broken.empty()) {
+        broken.assign(s);
+      } else {
+        string ss = s + "/" + broken;
+        final.push_back(ss);
+        broken.assign("");
+      }
+      continue;
+    }
+    final.push_back(s);
+  }
+  final.erase(final.begin());
+
+  return final;
+}
 
 void DatastoreTransaction::printDiffType(LYD_DIFFTYPE type) {
   switch (type) {
@@ -214,22 +263,69 @@ bool DatastoreTransaction::isCompositeType(const dynamic& d) {
   return d.isObject() || d.isArray();
 }
 
+//"/openconfig-interfaces:interfaces/interface"
+lys_node_list* DatastoreTransaction::mightHaveKeys(string path) {
+  const lys_module* pModule = ly_ctx_get_module(
+      datastoreState->ctx,
+      "openconfig-interfaces",
+      NULL,
+      0); // TODO name of model hardcoded
+  ly_set* pSet =
+      lys_find_path(pModule, pModule->data, const_cast<char*>(path.c_str()));
+
+  if (pSet->number != 1) {
+    throw std::runtime_error(
+        "There should have been a YANG model node for the query!");
+  }
+
+  if (pSet->set.s[0]->nodetype != LYS_LIST) {
+    return nullptr;
+  }
+
+  auto* list = (lys_node_list*)pSet->set.s[0];
+
+  if (list->keys_size == 0) {
+    return nullptr;
+  }
+
+  for (uint8_t i = 0; i < list->keys_size; i++) {
+    MLOG(MINFO) << "meno kluca: " << list->keys[i]->name;
+  }
+
+  return list;
+}
+
+//    ListKeys DatastoreTransaction::lysGetKeys (
+//    struct lys_node * node) {
+//        ListKeys keys;
+//    if (node->nodetype != LYS_LIST) {
+//        return nullptr;
+//    }
+//    auto *list = (lys_node_list *) node;
+//
+//    for (uint8_t i = 0; i < list->keys_size; i++) {
+//            MLOG(MINFO) << "meno kluca: " << list->keys[i]->name;
+//    }
+//
+//    return nullptr;
+//}
+
 void DatastoreTransaction::print(LeafVector& v) {
   for (const auto& item : v) {
     MLOG(MINFO) << "full path: " << item.first << " data: " << item.second;
   }
 }
 
-    string DatastoreTransaction::getData(const dynamic & d) {
-        if(d.isBool()){
-             return d.getBool() ? "true" : "false";
-        }
+string DatastoreTransaction::getData(const dynamic& d) {
+  if (d.isBool()) {
+    return d.getBool() ? "true" : "false";
+  }
 
-        if(d.isInt()){
-            return std::to_string(d.asInt());
-        }
+  if (d.isInt()) {
+    return std::to_string(d.asInt());
+  }
 
-        return d.getString();
-    }
+  return d.getString();
+}
 
 } // namespace devmand::channels::cli::datastore
