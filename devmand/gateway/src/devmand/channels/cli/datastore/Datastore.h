@@ -35,4 +35,4 @@ class Datastore {
   unique_ptr<BindingAwareDatastoreTransaction>
   newBindingTx(); // operations on transaction are NOT thread-safe
 };
-} // namespace devmand::channels::cli
+} // namespace devmand::channels::cli::datastore

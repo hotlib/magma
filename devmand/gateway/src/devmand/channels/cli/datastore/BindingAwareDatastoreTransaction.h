@@ -26,13 +26,13 @@ class BindingAwareDatastoreTransaction {
       shared_ptr<ModelRegistry> mreg);
 
  public:
-//  template <typename T>
-//  shared_ptr<T> read(string path) {
-//    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
-//    const shared_ptr<T>& ydkModel = make_shared<T>();
-//    string json = folly::toJson(datastoreTransaction.read(path));
-//    return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
-//  }
+  template <typename T>
+  shared_ptr<T> read(string path) {
+    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
+    const shared_ptr<T>& ydkModel = make_shared<T>();
+    string json = folly::toJson(datastoreTransaction.read(path));
+    return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
+  }
   void diff();
   void delete_(string path);
   void write(string path, shared_ptr<Entity> entity);
