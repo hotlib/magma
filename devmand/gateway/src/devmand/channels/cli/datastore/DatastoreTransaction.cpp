@@ -115,7 +115,7 @@ void DatastoreTransaction::print() {
 
 string DatastoreTransaction::toJson(lyd_node* initial) {
   char* buff;
-  lyd_print_mem(&buff, initial, LYD_JSON, 0);
+  lyd_print_mem(&buff, initial, LYD_JSON, LYP_WD_ALL);
   string result(buff);
   free(buff);
   return result;
