@@ -11,8 +11,10 @@ namespace devmand::channels::cli::datastore {
 using std::make_unique;
 using std::runtime_error;
 
-Datastore::Datastore(const shared_ptr<ModelRegistry> _mreg, DatastoreType type)
-    : mreg(_mreg) {
+Datastore::Datastore(
+    const shared_ptr<YdkDynamicCodec> _codec,
+    DatastoreType type)
+    : codec(_codec) {
   ly_ctx* pLyCtx = ly_ctx_new("/usr/share/openconfig@0.1.6/", 0);
   ly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
   ly_ctx_load_module(pLyCtx, "openconfig-interfaces", NULL);
@@ -28,7 +30,7 @@ unique_ptr<DatastoreTransaction> Datastore::newTx() {
 unique_ptr<BindingAwareDatastoreTransaction> Datastore::newBindingTx() {
   checkIfTransactionRunning();
   setTransactionRunning();
-  return make_unique<BindingAwareDatastoreTransaction>(datastoreState, mreg);
+  return make_unique<BindingAwareDatastoreTransaction>(datastoreState, codec);
 }
 
 void Datastore::checkIfTransactionRunning() {
