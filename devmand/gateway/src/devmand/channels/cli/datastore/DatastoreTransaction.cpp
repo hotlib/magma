@@ -46,7 +46,7 @@ void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
       datastoreState->ctx,
       const_cast<char*>(folly::toJson(previous).c_str()),
       LYD_JSON,
-      LYD_OPT_DATA | LYD_OPT_DATA_NO_YANGLIB);
+      datastoreTypeToLydOption());
   delete_(path);
   lyd_merge(root, pNode, LYD_OPT_DESTRUCT);
 }
@@ -64,7 +64,7 @@ void DatastoreTransaction::commit() {
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
-  // print(datastoreState->root);
+  print(datastoreState->root);
 }
 
 void DatastoreTransaction::validateBeforeCommit() {
@@ -230,7 +230,18 @@ bool DatastoreTransaction::isValid() {
         "datastore is empty and no changes performed, nothing to validate");
   }
   // TODO what validation options (LYD_OPT_CONFIG..)??
-  return lyd_validate(&root, LYD_OPT_CONFIG, nullptr) == 0;
+  return lyd_validate(&root, datastoreTypeToLydOption(), nullptr) == 0;
+}
+
+int DatastoreTransaction::datastoreTypeToLydOption() {
+  switch (datastoreState->type) {
+    case operational:
+      return LYD_OPT_DATA;
+    case config:
+      return LYD_OPT_CONFIG;
+  }
+
+  return 0;
 }
 
 } // namespace devmand::channels::cli::datastore
