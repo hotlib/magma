@@ -21,35 +21,11 @@ void BindingAwareDatastoreTransaction::delete_(string path) {
 void BindingAwareDatastoreTransaction::write(
     string path,
     shared_ptr<Entity> entity) {
-  LeafVector leafs;
-  createLeafs(entity, path, leafs);
-  datastoreTransaction.write(leafs);
+  datastoreTransaction.write(path, codec->convert(entity));
 }
 
 void BindingAwareDatastoreTransaction::create(shared_ptr<Entity> entity) {
-  datastoreTransaction.write("", codec->convert(entity));
-  // write("", entity);
-}
-
-void BindingAwareDatastoreTransaction::createLeafs(
-    shared_ptr<Entity> entity,
-    string init,
-    LeafVector& leafs) {
-  string prefix = init + "/" + entity->get_segment_path();
-  if (entity->get_name_leaf_data().size() > 0) { // process only leafs with data
-
-    for (const auto& data : entity->get_name_leaf_data()) {
-      std::vector<string> strs;
-      boost::split(strs, data.first, boost::is_any_of(" "));
-      string leafPath = prefix + "/" + strs[0];
-      string leafData = data.second.value;
-      leafs.emplace_back(std::make_pair(leafPath, leafData));
-    }
-  }
-
-  for (const auto& child : entity->get_children()) {
-    createLeafs(child.second, prefix, leafs);
-  }
+  write("", entity);
 }
 
 void BindingAwareDatastoreTransaction::commit() {

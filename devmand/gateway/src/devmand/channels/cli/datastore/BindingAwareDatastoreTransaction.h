@@ -19,7 +19,6 @@ class BindingAwareDatastoreTransaction {
   DatastoreTransaction datastoreTransaction;
   shared_ptr<YdkDynamicCodec> codec;
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
-  void createLeafs(shared_ptr<Entity> entity, string init, LeafVector& leafs);
 
  public:
   BindingAwareDatastoreTransaction(
