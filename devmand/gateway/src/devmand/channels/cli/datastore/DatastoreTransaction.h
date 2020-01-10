@@ -40,6 +40,7 @@ class DatastoreTransaction {
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void validateBeforeCommit();
   static lyd_node* computeRoot(lyd_node* n);
+  int datastoreTypeToLydOption();
   void writeLeafs(LeafVector& leafs);
   void print();
   static void print(LeafVector& v);
