@@ -29,26 +29,36 @@ void DatastoreTransaction::write(LeafVector& leafs) {
   writeLeafs(leafs);
 }
 
-void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
-  std::vector<string> strs;
-
-  boost::split(strs, path, boost::is_any_of("/")); // TODO path empty??
-  std::reverse(strs.begin(), strs.end());
-
-  dynamic previous = aDynamic;
-  for (const auto& pathSegment : fixSegments(strs)) {
-    dynamic obj = dynamic::object;
-    obj[pathSegment] = previous;
-    previous = obj;
-  }
-
-  lyd_node* pNode = lyd_parse_mem(
+lyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
+  return lyd_parse_mem(
       datastoreState->ctx,
-      const_cast<char*>(folly::toJson(previous).c_str()),
+      const_cast<char*>(folly::toJson(entity).c_str()),
       LYD_JSON,
       datastoreTypeToLydOption());
-  delete_(path);
-  lyd_merge(root, pNode, LYD_OPT_DESTRUCT);
+}
+
+void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
+  dynamic previous = aDynamic;
+  if (!path.empty()) {
+    std::vector<string> strs;
+
+    boost::split(strs, path, boost::is_any_of("/")); // TODO path empty??
+    std::reverse(strs.begin(), strs.end());
+
+    for (const auto& pathSegment : fixSegments(strs)) {
+      dynamic obj = dynamic::object;
+      obj[pathSegment] = previous;
+      previous = obj;
+    }
+    lyd_node* pNode = dynamic2lydNode(previous);
+    delete_(path);
+    lyd_merge(root, pNode, LYD_OPT_DESTRUCT);
+  } else {
+    if (root != nullptr) {
+      lyd_free(root);
+    }
+    root = dynamic2lydNode(previous);
+  }
 }
 
 void DatastoreTransaction::commit() {
@@ -236,7 +246,7 @@ bool DatastoreTransaction::isValid() {
 int DatastoreTransaction::datastoreTypeToLydOption() {
   switch (datastoreState->type) {
     case operational:
-      return LYD_OPT_DATA;
+      return LYD_OPT_DATA | LYD_OPT_DATA_NO_YANGLIB;
     case config:
       return LYD_OPT_CONFIG;
   }

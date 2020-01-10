@@ -27,7 +27,8 @@ void BindingAwareDatastoreTransaction::write(
 }
 
 void BindingAwareDatastoreTransaction::create(shared_ptr<Entity> entity) {
-  write("", entity);
+  datastoreTransaction.write("", codec->convert(entity));
+  // write("", entity);
 }
 
 void BindingAwareDatastoreTransaction::createLeafs(
@@ -57,8 +58,8 @@ void BindingAwareDatastoreTransaction::commit() {
 
 BindingAwareDatastoreTransaction::BindingAwareDatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState,
-    shared_ptr<ModelRegistry> _mreg)
-    : datastoreTransaction(_datastoreState), mreg(_mreg) {}
+    shared_ptr<YdkDynamicCodec> _codec)
+    : datastoreTransaction(_datastoreState), codec(_codec) {}
 
 bool BindingAwareDatastoreTransaction::isValid() {
   return datastoreTransaction.isValid();

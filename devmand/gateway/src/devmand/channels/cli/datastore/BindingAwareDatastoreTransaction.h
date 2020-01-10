@@ -7,31 +7,29 @@
 
 #pragma once
 
+#include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 
 namespace devmand::channels::cli::datastore {
 using LeafVector = std::vector<pair<string, string>>;
-
+using devmand::channels::cli::codecs::YdkDynamicCodec;
 class BindingAwareDatastoreTransaction {
  private:
   DatastoreTransaction datastoreTransaction;
-  shared_ptr<ModelRegistry> mreg;
+  shared_ptr<YdkDynamicCodec> codec;
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void createLeafs(shared_ptr<Entity> entity, string init, LeafVector& leafs);
 
  public:
   BindingAwareDatastoreTransaction(
       shared_ptr<DatastoreState> datastoreState,
-      shared_ptr<ModelRegistry> mreg);
+      shared_ptr<YdkDynamicCodec> codec);
 
  public:
   template <typename T>
   shared_ptr<T> read(string path) {
-    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
-    const shared_ptr<T>& ydkModel = make_shared<T>();
-    string json = folly::toJson(datastoreTransaction.read(path));
-    return std::static_pointer_cast<T>(bundle.decode(json, ydkModel));
+    return codec->convert2<T>(datastoreTransaction.read(path));
   }
   void diff();
   void delete_(string path);

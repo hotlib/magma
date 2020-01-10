@@ -42,6 +42,7 @@ class DatastoreTransaction {
   static lyd_node* computeRoot(lyd_node* n);
   int datastoreTypeToLydOption();
   void writeLeafs(LeafVector& leafs);
+  lyd_node* dynamic2lydNode(dynamic entity);
   void print();
   static void print(LeafVector& v);
   static void printDiffType(LYD_DIFFTYPE type);

@@ -11,7 +11,6 @@
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/cli/ModelRegistry.h>
-
 #include <libyang/libyang.h>
 
 namespace devmand::channels::cli::datastore {
@@ -25,7 +24,7 @@ using std::unique_ptr;
 
 class Datastore {
  private:
-  shared_ptr<ModelRegistry> mreg;
+  shared_ptr<YdkDynamicCodec> codec;
   shared_ptr<DatastoreState> datastoreState;
   void checkIfTransactionRunning();
   void setTransactionRunning();
@@ -34,7 +33,7 @@ class Datastore {
   static DatastoreType operational();
   static DatastoreType config();
 
-  Datastore(const shared_ptr<ModelRegistry> _mreg, DatastoreType _type);
+  Datastore(shared_ptr<YdkDynamicCodec> _codec, DatastoreType _type);
 
   unique_ptr<DatastoreTransaction>
   newTx(); // operations on transaction are NOT thread-safe
