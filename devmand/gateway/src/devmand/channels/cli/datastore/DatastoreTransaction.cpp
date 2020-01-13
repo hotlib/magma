@@ -87,6 +87,17 @@ void DatastoreTransaction::commit() {
   print(datastoreState->root);
 }
 
+void DatastoreTransaction::abort() {
+  checkIfCommitted();
+  if (root != nullptr) {
+    lyd_free(root);
+  }
+
+  hasCommited.store(true);
+  datastoreState->transactionUnderway.store(
+      false); // TODO what if transaction goes out of scope?
+}
+
 void DatastoreTransaction::validateBeforeCommit() {
   if (!isValid()) {
     string error = "model is invalid, won't commit changes to the datastore";
@@ -152,12 +163,14 @@ DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited && root != nullptr) {
     lyd_free(root);
   }
+  // datastoreState->transactionUnderway.store(false); //TODO what if
+  // transaction goes out of scope?
 }
 
 void DatastoreTransaction::checkIfCommitted() {
   if (hasCommited) {
     throw runtime_error(
-        "transaction already committed, no operations available");
+        "transaction already committed or aborted, no operations available");
   }
 }
 // TODO temporary hack
