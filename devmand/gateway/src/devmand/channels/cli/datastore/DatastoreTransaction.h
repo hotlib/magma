@@ -62,6 +62,7 @@ class DatastoreTransaction {
   void merge(string path, const dynamic& aDynamic);
   void write(string path, const dynamic& aDynamic);
   void commit();
+  void abort();
 
   virtual ~DatastoreTransaction();
 };
