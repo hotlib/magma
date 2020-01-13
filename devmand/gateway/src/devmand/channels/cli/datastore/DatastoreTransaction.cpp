@@ -16,6 +16,10 @@ using std::runtime_error;
 
 void DatastoreTransaction::delete_(string path) {
   checkIfCommitted();
+  if (path.empty()) {
+    MLOG(MWARNING) << "delete called with empty path";
+    return;
+  }
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
   MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   for (unsigned int j = 0; j < pSet->number; ++j) {
@@ -23,10 +27,9 @@ void DatastoreTransaction::delete_(string path) {
   }
 }
 
-void DatastoreTransaction::write(LeafVector& leafs) {
-  // print(leafs);
-  checkIfCommitted();
-  writeLeafs(leafs);
+void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
+  delete_(path);
+  merge(path, aDynamic);
 }
 
 lyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
@@ -37,27 +40,34 @@ lyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
       datastoreTypeToLydOption());
 }
 
-void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
+dynamic DatastoreTransaction::appendAllParents(
+    string path,
+    const dynamic& aDynamic) {
   dynamic previous = aDynamic;
+
+  std::vector<string> strs;
+
+  boost::split(strs, path, boost::is_any_of("/"));
+  std::reverse(strs.begin(), strs.end());
+
+  for (const auto& pathSegment : fixSegments(strs)) {
+    dynamic obj = dynamic::object;
+    obj[pathSegment] = previous;
+    previous = obj;
+  }
+  return previous;
+}
+
+void DatastoreTransaction::merge(const string path, const dynamic& aDynamic) {
   if (!path.empty()) {
-    std::vector<string> strs;
-
-    boost::split(strs, path, boost::is_any_of("/")); // TODO path empty??
-    std::reverse(strs.begin(), strs.end());
-
-    for (const auto& pathSegment : fixSegments(strs)) {
-      dynamic obj = dynamic::object;
-      obj[pathSegment] = previous;
-      previous = obj;
-    }
-    lyd_node* pNode = dynamic2lydNode(previous);
-    delete_(path);
+    dynamic withParents = appendAllParents(path, aDynamic);
+    lyd_node* pNode = dynamic2lydNode(withParents);
     lyd_merge(root, pNode, LYD_OPT_DESTRUCT);
   } else {
     if (root != nullptr) {
       lyd_free(root);
     }
-    root = dynamic2lydNode(previous);
+    root = dynamic2lydNode(aDynamic);
   }
 }
 

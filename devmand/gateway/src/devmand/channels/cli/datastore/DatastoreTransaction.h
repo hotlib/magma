@@ -50,6 +50,7 @@ class DatastoreTransaction {
   void print(lyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lyd_node* initial);
+  dynamic appendAllParents(string path, const dynamic& aDynamic);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
@@ -59,8 +60,8 @@ class DatastoreTransaction {
   void diff();
   bool isValid();
   void delete_(string path);
-  void write(LeafVector& leafs);
-  void write(const string path, const dynamic& aDynamic);
+  void merge(string path, const dynamic& aDynamic);
+  void write(string path, const dynamic& aDynamic);
   void commit();
 
   virtual ~DatastoreTransaction();
