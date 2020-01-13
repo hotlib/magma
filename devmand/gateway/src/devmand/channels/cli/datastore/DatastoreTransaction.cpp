@@ -17,7 +17,6 @@ using std::runtime_error;
 void DatastoreTransaction::delete_(string path) {
   checkIfCommitted();
   if (path.empty()) {
-    MLOG(MWARNING) << "delete called with empty path";
     return;
   }
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
@@ -30,6 +29,7 @@ void DatastoreTransaction::delete_(string path) {
 void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
   delete_(path);
   merge(path, aDynamic);
+  // print(root);
 }
 
 lyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
@@ -74,7 +74,7 @@ void DatastoreTransaction::merge(const string path, const dynamic& aDynamic) {
 void DatastoreTransaction::commit() {
   checkIfCommitted();
 
-  // validateBeforeCommit(); //TODO not working
+  validateBeforeCommit(); // TODO not working
   lyd_node* rootToBeMerged = computeRoot(
       root); // need the real root for convenience and copy via lyd_dup
   if (!datastoreState->isEmpty()) {
@@ -84,7 +84,7 @@ void DatastoreTransaction::commit() {
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
-  print(datastoreState->root);
+  //  print(datastoreState->root);
 }
 
 void DatastoreTransaction::abort() {
@@ -117,10 +117,32 @@ void DatastoreTransaction::print() {
   print(root);
 }
 
+
+//    string DatastoreTransaction::toJson(lyd_node* initial) {
+//        char* buff;
+//        lyd_print_mem(&buff, initial, LYD_JSON, LYP_WD_ALL);
+//        string result(buff);
+//        free(buff);
+//        return result;
+//    }
+
+
+
 string DatastoreTransaction::toJson(lyd_node* initial) {
+    char* buff2;
+    lyd_print_mem(&buff2, initial, LYD_XML, LYP_WD_ALL | LYP_FORMAT);
+    MLOG(MINFO) << "XML data su: " << buff2;
+    free(buff2);
+    MLOG(MINFO) << "koniec XML";
+
+
+
+
   char* buff;
-  lyd_print_mem(&buff, initial, LYD_JSON, LYP_WD_ALL);
+  lyd_print_mem(&buff, initial, LYD_JSON, LYP_WD_ALL | LYP_FORMAT);
   string result(buff);
+    MLOG(MINFO) << "JSON data su: " << buff;
+    MLOG(MINFO) << "koniec JSON";
   free(buff);
   return result;
 }
@@ -222,12 +244,16 @@ void DatastoreTransaction::printDiffType(LYD_DIFFTYPE type) {
   }
 }
 
-dynamic DatastoreTransaction::read(string path) {
+dynamic DatastoreTransaction::read(string path ) {
   checkIfCommitted();
 
   ly_set* pSet = lyd_find_path(root, const_cast<char*>(path.c_str()));
-  if (pSet->number != 1) {
+  if (pSet->number > 1) {
     throw runtime_error("Too many results from path: " + path);
+  }
+
+  if (pSet->number == 0) {
+    return nullptr;
   }
 
   const string& json = toJson(pSet->set.d[0]);
@@ -245,7 +271,6 @@ bool DatastoreTransaction::isValid() {
     throw runtime_error(
         "datastore is empty and no changes performed, nothing to validate");
   }
-  // TODO what validation options (LYD_OPT_CONFIG..)??
   return lyd_validate(&root, datastoreTypeToLydOption(), nullptr) == 0;
 }
 
