@@ -41,16 +41,15 @@ class DatastoreTransaction {
   void validateBeforeCommit();
   static lyd_node* computeRoot(lyd_node* n);
   int datastoreTypeToLydOption();
-  void writeLeafs(LeafVector& leafs);
   lyd_node* dynamic2lydNode(dynamic entity);
   void print();
   static void print(LeafVector& v);
   static void printDiffType(LYD_DIFFTYPE type);
-  std::vector<string> fixSegments(std::vector<string> str); // TODO hack
+  static std::vector<string> fixSegments(std::vector<string> str); // TODO hack
   void print(lyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lyd_node* initial);
-  dynamic appendAllParents(string path, const dynamic& aDynamic);
+  static dynamic appendAllParents(string path, const dynamic& aDynamic);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
