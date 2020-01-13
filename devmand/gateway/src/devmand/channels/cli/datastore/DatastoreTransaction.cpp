@@ -95,23 +95,6 @@ void DatastoreTransaction::validateBeforeCommit() {
   }
 }
 
-void DatastoreTransaction::writeLeafs(LeafVector& leafs) {
-  for (const auto& leaf : leafs) {
-    char* data = const_cast<char*>(leaf.second.c_str());
-    lyd_node* node = lyd_new_path(
-        root,
-        datastoreState->ctx,
-        leaf.first.c_str(),
-        data,
-        LYD_ANYDATA_STRING,
-        LYD_PATH_OPT_UPDATE);
-    if (root == nullptr) {
-      root =
-          node; // any node in tree will do (doesn't have to be the actual root)
-    }
-  }
-}
-
 void DatastoreTransaction::print(lyd_node* nodeToPrint) {
   char* buff;
   lyd_print_mem(&buff, nodeToPrint, LYD_XML, 0);
