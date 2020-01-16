@@ -36,19 +36,19 @@ namespace devmand::channels::cli::datastore {
 class DatastoreTransaction {
  private:
   shared_ptr<DatastoreState> datastoreState;
-  lyd_node* root = nullptr;
+  lllyd_node* root = nullptr;
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
   void validateBeforeCommit();
-  static lyd_node* computeRoot(lyd_node* n);
+  static lllyd_node* computeRoot(lllyd_node* n);
   int datastoreTypeToLydOption();
-  lyd_node* dynamic2lydNode(dynamic entity);
+  lllyd_node* dynamic2lydNode(dynamic entity);
   void print();
   static void print(LeafVector& v);
-  static void printDiffType(LYD_DIFFTYPE type);
+  static void printDiffType(LLLYD_DIFFTYPE type);
   static std::vector<string> fixSegments(std::vector<string> str); // TODO hack
-  void print(lyd_node* nodeToPrint);
+  void print(lllyd_node* nodeToPrint);
   void checkIfCommitted();
-  string toJson(lyd_node* initial);
+  string toJson(lllyd_node* initial);
   static dynamic appendAllParents(string path, const dynamic& aDynamic);
 
  public:

@@ -6,7 +6,7 @@ cmake_minimum_required(VERSION 3.7.2)
 
 set(MGM_COM_DIR /usr/lib/)
 # Pass libyang plugins dir
-add_definitions(-DLIBYANG_PLUGINS_DIR="/lib/libyang/")
+add_definitions(-DLIBYANG_PLUGINS_DIR="/usr/lib/libyang")
 
 add_definitions(-DPROTOBUF_INLINE_NOT_IN_HEADERS=0)
 
@@ -53,7 +53,7 @@ add_library(devman
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/FileWatcher.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/Time.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/YangUtils.cpp
-)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/codecs/YdkDynamicCodec.cpp)
 
 target_link_libraries(devman
   boost_context
@@ -73,6 +73,7 @@ target_link_libraries(devman
   ssh
   ssh_threads
   pcre
+  yang
   ydk
   ydk_openconfig
   ydk_ietf
@@ -232,6 +233,7 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/utils/Ssh.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/utils/Log.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/CommandTest.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/DatastoreTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ModelRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PlaintextCliDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/StructuredUbntDeviceTest.cpp
