@@ -17,22 +17,22 @@ enum DatastoreType { config, operational };
 
 struct DatastoreState {
   atomic_bool transactionUnderway = ATOMIC_VAR_INIT(false);
-  ly_ctx* ctx = nullptr;
-  lyd_node* root = nullptr;
+  llly_ctx* ctx = nullptr;
+  lllyd_node* root = nullptr;
   DatastoreType type;
 
   virtual ~DatastoreState() {
     if (root != nullptr) {
-      lyd_free(root);
+      lllyd_free(root);
     }
     if (ctx != nullptr) {
-      ly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or each
+      llly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or each
                                     // datastore has a private one???
     }
   }
 
  public:
-  DatastoreState(ly_ctx* _ctx, DatastoreType _type) : ctx(_ctx), type(_type) {}
+  DatastoreState(llly_ctx* _ctx, DatastoreType _type) : ctx(_ctx), type(_type) {}
 
   bool isEmpty() {
     return root == nullptr || ctx == nullptr;
