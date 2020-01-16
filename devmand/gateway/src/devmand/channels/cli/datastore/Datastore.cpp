@@ -15,10 +15,9 @@ Datastore::Datastore(
     const shared_ptr<YdkDynamicCodec> _codec,
     DatastoreType type)
     : codec(_codec) {
-
-    llly_ctx* pLyCtx = llly_ctx_new("/usr/share/openconfig@0.1.6/", 0);
-    llly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
-    llly_ctx_load_module(pLyCtx, "openconfig-interfaces", NULL);
+  llly_ctx* pLyCtx = llly_ctx_new("/usr/share/openconfig@0.1.6/", 0);
+  llly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
+  llly_ctx_load_module(pLyCtx, "openconfig-interfaces", NULL);
   datastoreState = make_shared<DatastoreState>(pLyCtx, type);
 }
 

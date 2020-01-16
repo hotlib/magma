@@ -68,13 +68,61 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermitted) {
   EXPECT_THROW(datastore.newTx(), runtime_error);
 }
 
-TEST_F(DatastoreTest, abortWorks) {
+TEST_F(DatastoreTest, abortDisablesRunningTransaction) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->abort();
-  datastore.newTx(); // this must pass without exception
   EXPECT_THROW(transaction->read("whatever"), runtime_error);
+  EXPECT_THROW(transaction->write("", dynamic::object()), runtime_error);
+  EXPECT_THROW(transaction->merge("", dynamic::object()), runtime_error);
+  EXPECT_THROW(transaction->abort(), runtime_error);
+  EXPECT_THROW(transaction->delete_("whatever"), runtime_error);
+  EXPECT_THROW(transaction->commit(), runtime_error);
+  EXPECT_THROW(transaction->isValid(), runtime_error);
+  EXPECT_THROW(transaction->diff(), runtime_error);
+}
+
+TEST_F(DatastoreTest, commitDisablesRunningTransaction) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+
+  transaction->commit();
+  EXPECT_THROW(transaction->read("whatever"), runtime_error);
+  EXPECT_THROW(transaction->write("", dynamic::object()), runtime_error);
+  EXPECT_THROW(transaction->merge("", dynamic::object()), runtime_error);
+  EXPECT_THROW(transaction->abort(), runtime_error);
+  EXPECT_THROW(transaction->delete_("whatever"), runtime_error);
+  EXPECT_THROW(transaction->commit(), runtime_error);
+  EXPECT_THROW(transaction->isValid(), runtime_error);
+  EXPECT_THROW(transaction->diff(), runtime_error);
+}
+
+TEST_F(DatastoreTest, commitEndsRunningTransaction) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+
+  transaction->commit();
+  EXPECT_NO_THROW(datastore.newTx());
+}
+
+TEST_F(DatastoreTest, dontAllowEmptyCommit) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  EXPECT_THROW(transaction->commit(), runtime_error);
+}
+
+TEST_F(DatastoreTest, abortEndsRunningTransaction) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->abort();
+  EXPECT_NO_THROW(datastore.newTx());
 }
 
 TEST_F(DatastoreTest, deleteSubtrees) {
@@ -96,18 +144,27 @@ TEST_F(DatastoreTest, writeNewInterface) {
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->write("", parseJson(openconfigInterfacesInterfaces));
-  const char* interface85 = "/openconfig-interfaces:interfaces/interface[name='0/85']";
+  const char* interface85 =
+      "/openconfig-interfaces:interfaces/interface[name='0/85']";
 
   transaction->write(interface85, parseJson(newInterface));
-  // dynamic data = transaction->read("/openconfig-interfaces:interfaces");
 
-  transaction->read("/openconfig-interfaces:interfaces/interface[name='0/85']/state/counters");
-//  transaction->commit();
-//        MLOG(MINFO) << "vysledok2: " << toPrettyJson(data2);
-//        MLOG(MINFO) << "vysledok: " << toPrettyJson(data);
+  dynamic data = transaction->read(
+      "/openconfig-interfaces:interfaces/interface[name='0/85']");
+  transaction->abort();
+  EXPECT_EQ(
+      "0/85", data["openconfig-interfaces:interface"][0]["name"].getString());
+}
 
-  //        transaction->abort();
-  //        EXPECT_EQ("0/85", data["name"].getString());
+TEST_F(DatastoreTest, identifyInvalidTree) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+  transaction->delete_(
+      "/openconfig-interfaces:interfaces/interface[name='0/2']/config");
+
+  EXPECT_FALSE(transaction->isValid());
 }
 
 } // namespace cli

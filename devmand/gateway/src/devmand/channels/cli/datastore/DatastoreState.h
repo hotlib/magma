@@ -26,13 +26,14 @@ struct DatastoreState {
       lllyd_free(root);
     }
     if (ctx != nullptr) {
-      llly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or each
-                                    // datastore has a private one???
+      llly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or
+                                      // each datastore has a private one???
     }
   }
 
  public:
-  DatastoreState(llly_ctx* _ctx, DatastoreType _type) : ctx(_ctx), type(_type) {}
+  DatastoreState(llly_ctx* _ctx, DatastoreType _type)
+      : ctx(_ctx), type(_type) {}
 
   bool isEmpty() {
     return root == nullptr || ctx == nullptr;

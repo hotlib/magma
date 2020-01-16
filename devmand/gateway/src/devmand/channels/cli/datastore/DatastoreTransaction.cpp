@@ -16,11 +16,16 @@ using std::runtime_error;
 
 void DatastoreTransaction::delete_(string path) {
   checkIfCommitted();
-  if (path.empty()) {
+  if (path.empty() || root == nullptr) {
     return;
   }
   llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.c_str()));
-  MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
+  if (pSet == nullptr) {
+    MLOG(MDEBUG) << "Nothing to delete, " + path + " not found";
+    return;
+  } else {
+    MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
+  }
   for (unsigned int j = 0; j < pSet->number; ++j) {
     lllyd_free(pSet->set.d[j]);
   }
@@ -59,6 +64,7 @@ dynamic DatastoreTransaction::appendAllParents(
 }
 
 void DatastoreTransaction::merge(const string path, const dynamic& aDynamic) {
+  checkIfCommitted();
   if (!path.empty()) {
     dynamic withParents = appendAllParents(path, aDynamic);
     lllyd_node* pNode = dynamic2lydNode(withParents);
@@ -117,18 +123,15 @@ void DatastoreTransaction::print() {
   print(root);
 }
 
+string DatastoreTransaction::toJson(lllyd_node* initial) {
+  char* buff;
+  lllyd_print_mem(&buff, initial, LLLYD_JSON, LLLYP_WD_ALL);
+  string result(buff);
+  free(buff);
+  return result;
+}
 
-    string DatastoreTransaction::toJson(lllyd_node* initial) {
-        char* buff;
-        lllyd_print_mem(&buff, initial, LLLYD_JSON, LLLYP_WD_ALL);
-        string result(buff);
-        free(buff);
-        return result;
-    }
-
-
-
-//string DatastoreTransaction::toJson(lllyd_node* initial) {
+// string DatastoreTransaction::toJson(lllyd_node* initial) {
 //    char* buff2;
 //    lllyd_print_mem(&buff2, initial, LLLYD_XML, LLLYP_WD_ALL | LLLYP_FORMAT);
 //    MLOG(MINFO) << "XML data su: " << buff2;
@@ -241,14 +244,14 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   }
 }
 
-dynamic DatastoreTransaction::read(string path ) {
+dynamic DatastoreTransaction::read(string path) {
   checkIfCommitted();
 
   llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.c_str()));
 
-    if (pSet == nullptr || pSet->number == 0) {
-        return nullptr;
-    }
+  if (pSet == nullptr || pSet->number == 0) {
+    return nullptr;
+  }
 
   if (pSet->number > 1) {
     throw runtime_error("Too many results from path: " + path);
@@ -265,6 +268,7 @@ void DatastoreTransaction::print(LeafVector& v) {
 }
 
 bool DatastoreTransaction::isValid() {
+  checkIfCommitted();
   if (root == nullptr) {
     throw runtime_error(
         "datastore is empty and no changes performed, nothing to validate");
