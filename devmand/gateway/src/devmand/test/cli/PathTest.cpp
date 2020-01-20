@@ -10,7 +10,6 @@
 
 #include <devmand/devices/cli/translation/Path.h>
 #include <devmand/test/cli/utils/Log.h>
-#include <folly/json.h>
 #include <gtest/gtest.h>
 
 namespace devmand {
@@ -52,16 +51,17 @@ TEST_F(PathTest, path) {
   ASSERT_EQ(
       ifc.getParent(),
       "/openconfig-interfaces:interfaces/interface[id=\"ethernet 0/1\"]");
-  ASSERT_EQ(
-      ifc.getSegments(),
-      vector<string>{"openconfig-interfaces:interfaces"
-                     "interface[id=\"ethernet 0/1\"]"
-                     "config"});
+  vector<string> expectedSegments =
+      vector<string>{"openconfig-interfaces:interfaces",
+                     "interface[id=\"ethernet 0/1\"]",
+                     "config"};
+  ASSERT_EQ(ifc.getSegments(), expectedSegments);
+
+  EXPECT_THROW(Path("openconfig-interfaces:interfaces"), InvalidPathException);
 
   //   Invalid paths
   //  Path ifcs = " /openconfig-interfaces:interfaces  ";
   //  Path ifcs = "/openconfig-interfaces:interfaces/";
-  //  Path ifcs = "openconfig-interfaces:interfaces";
   //  Path ifcs = "/xyz-sad-asdf";
 }
 

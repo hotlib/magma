@@ -25,7 +25,9 @@ Path::Path(const string& _path) : path(_path) {
   if (_path.rfind(PATH_SEPARATOR, 0) != 0) {
     throw InvalidPathException(_path, "Not an absolute path");
   }
-    // TODO
+
+
+  // TODO
   // path should not contain leading/trailing whitespace
   // path should be valid
   // pre-cache segments and unkeyed version
@@ -36,16 +38,35 @@ vector<string> Path::getSegments() const {
     return vector<string>();
   }
 
-  vector<string> segments;
-  // FIXME ignore separator in keys
+  // Keys could contain path separators, so split segments of unkeyed version
+  //  and use them to extract segments with keys
+  vector<string> unkeyedSegments;
   boost::split(
-      segments,
-      path,
+      unkeyedSegments,
+      unkeyed().path,
       boost::is_any_of(Path::PATH_SEPARATOR),
       boost::token_compress_on);
 
-  // strip the first empty segment since the path is always absolute
-  return vector<string>(segments.begin() + 1, segments.end());
+  string pathCopy = path;
+  vector<string> segments;
+
+  // skip the first empty segment since the path is always absolute
+  for (unsigned int i = 1; i < unkeyedSegments.size(); ++i) {
+    if (i == unkeyedSegments.size() - 1) {
+      segments.push_back(pathCopy.substr(1, pathCopy.length()));
+      break;
+    }
+
+    pathCopy = pathCopy.substr(unkeyedSegments[i].length() + 1);
+
+    unsigned long nextSegmentStart =
+        pathCopy.find(PATH_SEPARATOR + unkeyedSegments[i + 1]);
+    segments.push_back(
+        unkeyedSegments[i] + pathCopy.substr(0, nextSegmentStart));
+
+    pathCopy = pathCopy.substr(nextSegmentStart);
+  }
+  return segments;
 }
 
 static const auto KEYS_IN_PATH = regex("\\[(.*)\\]");
