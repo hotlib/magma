@@ -59,6 +59,14 @@ TEST_F(PathTest, path) {
 
   EXPECT_THROW(Path("openconfig-interfaces:interfaces"), InvalidPathException);
 
+  Path ip =
+      R"(/openconfig-interfaces:interfaces/interface[id="ethernet 0/1"]/subinterfaces/subinterface[index=0]/openconfig-if-ip:ip/ipv4/address[ip="4:4:4:4"])";
+  ASSERT_EQ(ip.unkeyed().getSegments().size(), 7);
+  ASSERT_EQ(ip.getSegments().size(), ip.getDepth());
+  ASSERT_EQ(
+      ip.prefixAllSegments().toString(),
+      R"(/openconfig-interfaces:interfaces/openconfig-interfaces:interface[id="ethernet 0/1"]/openconfig-interfaces:subinterfaces/openconfig-interfaces:subinterface[index=0]/openconfig-if-ip:ip/openconfig-if-ip:ipv4/openconfig-if-ip:addresss[ip="4:4:4:4"])");
+
   //   Invalid paths
   //  Path ifcs = " /openconfig-interfaces:interfaces  ";
   //  Path ifcs = "/openconfig-interfaces:interfaces/";

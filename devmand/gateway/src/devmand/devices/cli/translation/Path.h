@@ -37,6 +37,7 @@ class Path {
   const Path unkeyed() const;
   vector<string> getSegments() const;
   string getLastSegment() const;
+  const Path prefixAllSegments() const;
   u_long getDepth() const;
   bool isChildOf(const Path& parent);
   const Path getParent() const;

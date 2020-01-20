@@ -26,7 +26,6 @@ Path::Path(const string& _path) : path(_path) {
     throw InvalidPathException(_path, "Not an absolute path");
   }
 
-
   // TODO
   // path should not contain leading/trailing whitespace
   // path should be valid
@@ -53,7 +52,7 @@ vector<string> Path::getSegments() const {
   // skip the first empty segment since the path is always absolute
   for (unsigned int i = 1; i < unkeyedSegments.size(); ++i) {
     if (i == unkeyedSegments.size() - 1) {
-      segments.push_back(pathCopy.substr(1, pathCopy.length()));
+      segments.push_back(pathCopy.substr(1));
       break;
     }
 
@@ -69,7 +68,47 @@ vector<string> Path::getSegments() const {
   return segments;
 }
 
-static const auto KEYS_IN_PATH = regex("\\[(.*)\\]");
+static const auto PREFIXED_SEGMENT = regex("([^:]+):([^:]+)");
+
+const Path Path::prefixAllSegments() const {
+  if (ROOT == *this) {
+    return ROOT;
+  }
+
+  vector<string> unkeyedSegments = unkeyed().getSegments();
+
+  string pathCopy = path;
+  stringstream newPath;
+  newPath << PATH_SEPARATOR;
+
+  string lastPrefix = "";
+  for (unsigned int i = 0; i < unkeyedSegments.size(); ++i) {
+    smatch match;
+    if (regex_match(unkeyedSegments[i], match, PREFIXED_SEGMENT)) {
+      lastPrefix = match[1];
+      newPath << unkeyedSegments[i];
+    } else {
+      newPath << lastPrefix << ":" << unkeyedSegments[i];
+    }
+
+    if (i == unkeyedSegments.size() - 1) {
+      newPath << pathCopy.substr(unkeyedSegments[i].length());
+      break;
+    }
+
+    pathCopy = pathCopy.substr(unkeyedSegments[i].length() + 1);
+
+    unsigned long nextSegmentStart =
+        pathCopy.find(PATH_SEPARATOR + unkeyedSegments[i + 1]);
+    newPath << pathCopy.substr(0, nextSegmentStart) << PATH_SEPARATOR;
+
+    pathCopy = pathCopy.substr(nextSegmentStart);
+  }
+
+  return Path(newPath.str());
+}
+
+static const auto KEYS_IN_PATH = regex("\\[([^\\]]+)\\]");
 
 const Path Path::unkeyed() const {
   return Path(regex_replace(path, KEYS_IN_PATH, ""));
@@ -110,7 +149,9 @@ const Path Path::getParent() const {
 }
 
 const Path Path::getChild(string childSegment) const {
-  // TODO check child segment doesn't contain PATH_SERPARATOR
+  if (childSegment.rfind(PATH_SEPARATOR, 0) == 0) {
+    return Path(path + childSegment);
+  }
   return Path(path + PATH_SEPARATOR + childSegment);
 }
 
