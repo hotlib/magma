@@ -132,7 +132,7 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliTimekeeperWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CancelableWTCallback.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/LoggingCli.cpp
-  )
+        src/devmand/channels/cli/SchemaContext.h)
 
 target_link_libraries(devman_channel_cli
   devman)
@@ -235,6 +235,7 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/utils/Log.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/CommandTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PathTest.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/SchemaContextTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ReaderRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PluginRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ModelRegistryTest.cpp
