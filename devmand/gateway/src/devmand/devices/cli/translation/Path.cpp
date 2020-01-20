@@ -280,7 +280,7 @@ bool operator>=(const Path& lhs, const Path& rhs) {
   return !(lhs < rhs);
 }
 
-string Path::toString() const {
+string Path::str() const {
   return path;
 }
 

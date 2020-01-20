@@ -141,7 +141,7 @@ class ReadException : public runtime_error {
  public:
   ReadException(Path path, string reason)
       : runtime_error(
-            "Unable to read path: " + path.toString() + " due to: " + reason){};
+          "Unable to read path: " + path.str() + " due to: " + reason){};
 };
 
 class ReaderRegistry {

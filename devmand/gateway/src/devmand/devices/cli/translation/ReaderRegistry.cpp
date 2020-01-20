@@ -26,7 +26,7 @@ Future<dynamic> CompositeReader::read(const Path& path) const {
       return Future<dynamic>(ReadException(
           path,
           "No reader registered at: " +
-              registeredPath.getChild(childName).toString()));
+                  registeredPath.getChild(childName).str()));
     }
     return children.at(childName)->read(path);
   }
@@ -139,7 +139,7 @@ CompositeListReader::CompositeListReader(
   if (!isListReader(_clientReader)) {
     throw ReaderRegistryException(
         "Unable to register non list reader for path: " +
-        _registeredPath.toString());
+                _registeredPath.str());
   }
 }
 

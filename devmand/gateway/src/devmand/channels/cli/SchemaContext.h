@@ -14,6 +14,7 @@ namespace devmand::channels::cli {
 
 using devmand::devices::cli::Path;
 using std::string;
+using std::vector;
 
 class SchemaContext {
  private:
@@ -42,69 +43,41 @@ class SchemaContext {
   }
 
   bool isPathValid(Path path) {
-    return llly_path_data2schema(
-               ctx, const_cast<char*>(path.toString().c_str())) != nullptr;
+    return llly_path_data2schema(ctx, const_cast<char*>(path.str().c_str())) != nullptr;
   }
 
-  bool isList(Path p){
-      return getNode(p)->nodetype == LLLYS_LIST;
+  bool isList(Path p) {
+    return getNode(p)->nodetype == LLLYS_LIST;
   }
 
   lllys_node* getNode(Path p) {
     if (not isPathValid(p)) {
-        throw std::runtime_error("Path not valid");
+      throw std::runtime_error("Path not valid");
     }
-    ly_set* pSet =
-        llly_ctx_find_path(ctx, const_cast<char*>(path.toString().c_str()));
+    char * schemaPath = llly_path_data2schema(ctx, const_cast<char*>(p.str().c_str())); //TODO who cleans up the char *?
+    //MLOG(MINFO) << "schemaPath: " << schemaPath;
+    llly_set* pSet = llly_ctx_find_path(ctx, schemaPath);
 
-    if (pSet->number != 1) {
+    if (pSet == nullptr || pSet->number != 1) { // TODO this probably can't happen
       throw std::runtime_error(
-          "There should have been a YANG model node for the query!"); // TODO
-                                                                      // this
-                                                                      // probably
-                                                                      // can't
-                                                                      // happen
+          "There should have been a YANG model node for the query!");
     }
-
+    //TODO  ly_set_free()
     return pSet->set.s[0];
   }
 
-  //  std::vector getKeys(Path p) {
-  //    const lys_module* pModule = ly_ctx_get_module(
-  //        ctx,
-  //        "openconfig-interfaces",
-  //        NULL,
-  //        0); // TODO name of model hardcoded
-  //    ly_set* pSet =
-  //        lys_find_path(pModule, pModule->data,
-  //        const_cast<char*>(path.c_str()));
-  //
-  //    if (pSet->number != 1) {
-  //      throw std::runtime_error(
-  //          "There should have been a YANG model node for the query!");
-  //    }
-  //
-  //    if (pSet->set.s[0]->nodetype != LYS_LIST) {
-  //      return nullptr;
-  //    }
-  //
-  //    auto* list = (lys_node_list*)pSet->set.s[0];
-  //
-  //    if (list->keys_size == 0) {
-  //      return nullptr;
-  //    }
-  //
-  //    for (uint8_t i = 0; i < list->keys_size; i++) {
-  //      MLOG(MINFO) << "meno kluca: " << list->keys[i]->name;
-  //    }
-  //
-  //    return list;
-  //  }
-
- private:
-  bool isList(Path path) {
-    (void)path;
-    return false;
+  vector<string> getKeys(Path p) {
+    lllys_node* node = getNode(p);
+    if (node->nodetype != LLLYS_LIST) {
+      return {};
+    } else {
+      auto* list = (lllys_node_list*)node;
+      vector<string> result;
+      for (uint8_t i = 0; i < list->keys_size; i++) {
+        result.emplace_back(string(list->keys[i]->name));
+      }
+      return result;
+    }
   }
 };
 } // namespace devmand::channels::cli

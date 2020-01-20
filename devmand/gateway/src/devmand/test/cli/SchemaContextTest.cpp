@@ -28,10 +28,17 @@ class SchemaContextTest : public ::testing::Test {
 };
 
     TEST_F(SchemaContextTest, ctxtest) {
-        string sklucmi = "/openconfig-interfaces:interfaces/interface[name=\"GigabitEthernet1\"]/subinterfaces/subinterface[index=0]/openconfig-if-ip:ipv4/addresses/address[ip3=\"44.44.44.44\"]";
+        string sklucmi = "/openconfig-interfaces:interfaces/interface[name=\"GigabitEthernet1\"]/subinterfaces/subinterface[index=0]/openconfig-if-ip:ipv4/addresses/address[ip=\"44.44.44.44\"]";
         string bezklucmi = "/openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/openconfig-if-ip:ipv4/addresses/address";
+        string simple = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface";
         SchemaContext context;
-        context.test123(sklucmi);
+        context.getNode(Path(simple));
+//        const vector <string> &vector = context.getKeys(Path(simple));
+//
+//        for (const auto &key : vector) {
+//            MLOG(MINFO) << key;
+//
+//}
     }
 
 }
