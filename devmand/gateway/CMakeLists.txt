@@ -73,6 +73,7 @@ target_link_libraries(devman
   ssh
   ssh_threads
   pcre
+  yang
   ydk
   ydk_openconfig
   ydk_ietf
