@@ -32,13 +32,13 @@ class SchemaContextTest : public ::testing::Test {
         string bezklucmi = "/openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/openconfig-if-ip:ipv4/addresses/address";
         string simple = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface";
         SchemaContext context;
-        context.getNode(Path(simple));
-//        const vector <string> &vector = context.getKeys(Path(simple));
-//
-//        for (const auto &key : vector) {
-//            MLOG(MINFO) << key;
-//
-//}
+//        context.getNode(Path(simple));
+        const vector <string> &vector = context.getKeys(Path(simple));
+
+        for (const auto &key : vector) {
+            MLOG(MINFO) << key;
+
+}
     }
 
 }
