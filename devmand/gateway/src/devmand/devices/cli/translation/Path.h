@@ -51,7 +51,7 @@ class Path {
   static const string serializeKeys(Keys keys);
   static const Keys parseKeys(string keys);
 
-  string toString() const;
+  string str() const;
   friend ostream& operator<<(ostream& os, const Path& path);
 
   bool operator==(const Path& rhs) const;

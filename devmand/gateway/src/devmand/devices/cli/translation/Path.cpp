@@ -26,7 +26,6 @@ Path::Path(const string& _path) : path(_path) {
     throw InvalidPathException(_path, "Not an absolute path");
   }
 
-
   // TODO
   // path should not contain leading/trailing whitespace
   // path should be valid
@@ -239,7 +238,7 @@ bool operator>=(const Path& lhs, const Path& rhs) {
   return !(lhs < rhs);
 }
 
-string Path::toString() const {
+string Path::str() const {
   return path;
 }
 
