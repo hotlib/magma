@@ -92,7 +92,7 @@ const Path Path::prefixAllSegments() const {
     }
 
     if (i == unkeyedSegments.size() - 1) {
-      newPath << pathCopy.substr(unkeyedSegments[i].length());
+      newPath << pathCopy.substr(unkeyedSegments[i].length() + 1);
       break;
     }
 

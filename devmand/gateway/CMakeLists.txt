@@ -133,7 +133,7 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CliTimekeeperWrapper.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/CancelableWTCallback.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/LoggingCli.cpp
-        src/devmand/channels/cli/SchemaContext.h)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/SchemaContext.h)
 
 target_link_libraries(devman_channel_cli
   devman)

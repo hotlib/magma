@@ -27,10 +27,12 @@ class SchemaContext {
     char* schemaPath = llly_path_data2schema(
         ctx,
         const_cast<char*>(p.str().c_str())); // TODO who cleans up the char *?
-    MLOG(MINFO) << "schemaPath: " << schemaPath;
+    Path schemaPathPrefixed(schemaPath);
+
     llly_set* pSet = llly_ctx_find_path(
         ctx,
-        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:subinterfaces/openconfig-interfaces:subinterface/openconfig-if-ip:ipv4/openconfig-if-ip:addresses/openconfig-if-ip:address");
+        const_cast<char*>(
+            schemaPathPrefixed.prefixAllSegments().str().c_str()));
 
     if (pSet == nullptr ||
         pSet->number != 1) { // TODO this probably can't happen
@@ -43,7 +45,9 @@ class SchemaContext {
 
  public:
   SchemaContext() {
-    ctx = llly_ctx_new("/usr/share/openconfig@0.1.6/", LLLY_CTX_ALLIMPLEMENTED);
+    ctx = llly_ctx_new(
+        "/usr/share/openconfig@0.1.6/",
+        LLLY_CTX_ALLIMPLEMENTED); // TODO have a shared context
     llly_ctx_load_module(ctx, "iana-if-type", NULL);
     llly_ctx_load_module(ctx, "ietf-interfaces", NULL);
     llly_ctx_load_module(ctx, "ietf-yang-types", NULL);

@@ -8,10 +8,9 @@
 #define LOG_WITH_GLOG
 #include <magma_logging.h>
 
-#include <devmand/devices/cli/translation/Path.h>
 #include <devmand/channels/cli/SchemaContext.h>
+#include <devmand/devices/cli/translation/Path.h>
 #include <devmand/test/cli/utils/Log.h>
-#include <folly/json.h>
 #include <gtest/gtest.h>
 
 namespace devmand::test::cli {
@@ -27,18 +26,33 @@ class SchemaContextTest : public ::testing::Test {
   }
 };
 
-    TEST_F(SchemaContextTest, ctxtest) {
-        string sklucmi = "/openconfig-interfaces:interfaces/interface[name=\"GigabitEthernet1\"]/subinterfaces/subinterface[index=0]/openconfig-if-ip:ipv4/addresses/address[ip=\"44.44.44.44\"]";
-        string bezklucmi = "/openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/openconfig-if-ip:ipv4/addresses/address";
-        string simple = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface";
-        SchemaContext context;
-//        context.getNode(Path(simple));
-        const vector <string> &vector = context.getKeys(Path(simple));
-
-        for (const auto &key : vector) {
-            MLOG(MINFO) << key;
-
+TEST_F(SchemaContextTest, getKeys) {
+  Path pathToNode = Path(
+      "/openconfig-interfaces:interfaces/interface/subinterfaces/subinterface/openconfig-if-ip:ipv4/addresses/address");
+  SchemaContext context;
+  EXPECT_TRUE(context.isList(pathToNode));
+  const vector<string>& vector = context.getKeys(pathToNode);
+  EXPECT_EQ(1, vector.size());
+  EXPECT_EQ("ip", vector.at(0));
 }
-    }
 
+TEST_F(SchemaContextTest, isList) {
+  Path pathToList = Path("/openconfig-interfaces:interfaces/interface");
+  Path pathToNonList =
+      Path("/openconfig-interfaces:interfaces/interface/state");
+  SchemaContext context;
+  EXPECT_TRUE(context.isList(pathToList));
+  EXPECT_FALSE(context.isList(pathToNonList));
 }
+
+TEST_F(SchemaContextTest, checkValidPath) {
+  Path pathToRealNode = Path(
+      "/openconfig-interfaces:interfaces/interface/subinterfaces/subinterface");
+  Path pathToNonExistentNode = Path(
+      "/openconfig-interfaces:interfaces/interface/sssubinterfaces/subinterface");
+  SchemaContext context;
+  EXPECT_TRUE(context.isPathValid(pathToRealNode));
+  EXPECT_FALSE(context.isPathValid(pathToNonExistentNode));
+}
+
+} // namespace devmand::test::cli

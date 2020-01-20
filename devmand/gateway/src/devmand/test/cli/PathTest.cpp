@@ -64,7 +64,7 @@ TEST_F(PathTest, path) {
   ASSERT_EQ(ip.unkeyed().getSegments().size(), 7);
   ASSERT_EQ(ip.getSegments().size(), ip.getDepth());
   ASSERT_EQ(
-      ip.prefixAllSegments().toString(),
+      ip.prefixAllSegments().str(),
       R"(/openconfig-interfaces:interfaces/openconfig-interfaces:interface[id="ethernet 0/1"]/openconfig-interfaces:subinterfaces/openconfig-interfaces:subinterface[index=0]/openconfig-if-ip:ip/openconfig-if-ip:ipv4/openconfig-if-ip:addresss[ip="4:4:4:4"])");
 
   //   Invalid paths
