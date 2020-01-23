@@ -24,6 +24,7 @@ namespace cli {
 
 using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
+using devmand::test::utils::cli::interface02TopPath;
 using devmand::test::utils::cli::newInterface;
 using devmand::test::utils::cli::newInterfaceTopPath;
 using devmand::test::utils::cli::openconfigInterfacesInterfaces;
@@ -175,9 +176,10 @@ TEST_F(DatastoreTest, identifyInvalidTree) {
       "/openconfig-interfaces:interfaces/interface[name='0/2']/config");
 
   EXPECT_FALSE(transaction->isValid());
+  transaction->abort();
 }
 
-TEST_F(DatastoreTest, mergeInterface) {
+TEST_F(DatastoreTest, mergeChangesInterface) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
@@ -190,8 +192,37 @@ TEST_F(DatastoreTest, mergeInterface) {
   transaction->merge(newInterfaceTopPath + "/state", state);
 
   state = transaction->read(newInterfaceTopPath + "/state");
+  transaction->abort();
   EXPECT_EQ(state["openconfig-interfaces:state"]["mtu"], 1555);
   EXPECT_EQ(state["openconfig-interfaces:state"]["oper-status"], "UP");
+}
+
+TEST_F(DatastoreTest, mergeErasedValueOriginalValueUnchangedInterface) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+
+  dynamic state = transaction->read(interface02TopPath + "/state");
+  state["openconfig-interfaces:state"].erase("mtu");
+  transaction->merge(interface02TopPath + "/state", state);
+  state = transaction->read(interface02TopPath + "/state");
+  EXPECT_EQ(state["openconfig-interfaces:state"]["mtu"], 1518);
+}
+
+TEST_F(DatastoreTest, changeLeaf) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+
+  dynamic enabled = transaction->read(interface02TopPath + "/state/enabled");
+  MLOG(MINFO) << toPrettyJson(enabled);
+  enabled["openconfig-interfaces:enabled"] = false;
+  transaction->merge(interface02TopPath + "/state/enabled", enabled);
+
+  enabled = transaction->read(interface02TopPath + "/state/enabled");
+  EXPECT_EQ(enabled["openconfig-interfaces:enabled"], false);
 }
 
 } // namespace cli

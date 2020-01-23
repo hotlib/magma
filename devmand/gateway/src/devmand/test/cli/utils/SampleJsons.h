@@ -119,6 +119,9 @@ string openconfigInterfacesInterfaces =
 Path newInterfaceTopPath(
     "/openconfig-interfaces:interfaces/interface[name='0/85']");
 
+Path interface02TopPath(
+    "/openconfig-interfaces:interfaces/interface[name='0/2']");
+
 string newInterface =
     "{\n"
     "  \"openconfig-interfaces:interface\": [\n"
