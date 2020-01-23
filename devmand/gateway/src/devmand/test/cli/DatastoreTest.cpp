@@ -6,17 +6,17 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #define LOG_WITH_GLOG
+#include <magma_logging.h>
 #include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/Datastore.h>
-#include <devmand/devices/cli/ModelRegistry.h>
+#include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <devmand/test/cli/utils/Log.h>
 #include <devmand/test/cli/utils/SampleJsons.h>
 #include <folly/json.h>
 #include <gtest/gtest.h>
-#include <magma_logging.h>
 
 namespace devmand {
 namespace test {

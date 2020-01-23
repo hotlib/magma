@@ -8,7 +8,7 @@
 #pragma once
 
 #include <devmand/channels/cli/datastore/DatastoreState.h>
-#include <devmand/devices/cli/ModelRegistry.h>
+#include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <libyang/libyang.h>

@@ -10,7 +10,7 @@
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
-#include <devmand/devices/cli/ModelRegistry.h>
+#include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <libyang/libyang.h>
 
 namespace devmand::channels::cli::datastore {

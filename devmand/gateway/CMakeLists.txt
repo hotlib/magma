@@ -251,7 +251,6 @@ add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/SchemaContextTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/BindingContextTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/DatastoreTest.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/ModelRegistryTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/PlaintextCliDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/StructuredUbntDeviceTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/DemoDeviceTest.cpp
