@@ -30,11 +30,12 @@ class YdkDynamicCodec {
   dynamic convert(shared_ptr<Entity> entity);
   template <typename T>
   shared_ptr<T> convert2(dynamic entity) {
-      //TODO neviem co s tymto
-//    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
-//    const shared_ptr<T>& ydkModel = make_shared<T>();
-//    return std::static_pointer_cast<T>(bundle.decode(toJson(entity), ydkModel));
-return nullptr;
+    // TODO neviem co s tymto
+    //    auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
+    //    const shared_ptr<T>& ydkModel = make_shared<T>();
+    //    return std::static_pointer_cast<T>(bundle.decode(toJson(entity),
+    //    ydkModel));
+    return nullptr;
   }
 };
 } // namespace devmand::channels::cli::codecs

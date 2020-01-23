@@ -7,11 +7,13 @@
 
 #include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
+#include <devmand/devices/cli/schema/Path.h>
 #include <libyang/tree_data.h>
 #include <libyang/tree_schema.h>
 
 namespace devmand::channels::cli::datastore {
 
+using devmand::devices::cli::Path;
 using std::runtime_error;
 
 void DatastoreTransaction::delete_(string path) {
@@ -29,6 +31,7 @@ void DatastoreTransaction::delete_(string path) {
   for (unsigned int j = 0; j < pSet->number; ++j) {
     lllyd_free(pSet->set.d[j]);
   }
+  llly_set_free(pSet);
 }
 
 void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
@@ -42,24 +45,38 @@ lllyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
       datastoreState->ctx,
       const_cast<char*>(folly::toJson(entity).c_str()),
       LLLYD_JSON,
-      datastoreTypeToLydOption());
+      datastoreTypeToLydOption() | LLLYD_OPT_TRUSTED);
 }
 
 dynamic DatastoreTransaction::appendAllParents(
     string path,
     const dynamic& aDynamic) {
+  if (path.empty()) {
+    return aDynamic;
+  }
   dynamic previous = aDynamic;
 
-  std::vector<string> strs;
+  Path p(path);
 
-  boost::split(strs, path, boost::is_any_of("/"));
-  std::reverse(strs.begin(), strs.end());
+  const std::vector<string>& segments = p.unkeyed().getSegments();
 
-  for (const auto& pathSegment : fixSegments(strs)) {
-    dynamic obj = dynamic::object;
-    obj[pathSegment] = previous;
-    previous = obj;
+  for (long j = static_cast<long>(segments.size()) - 2; j >= 0; --j) {
+    string segment = segments[static_cast<unsigned long>(j)];
+    if (p.getKeysFromSegment(segment).empty()) {
+      dynamic obj = dynamic::object;
+      obj[segment] = previous;
+      previous = obj;
+    } else {
+      dynamic obj = dynamic::object;
+      const Path::Keys& k = p.getKeysFromSegment(segment);
+      for (auto& pair : k.items()) { // adding mandatory keys
+        previous[pair.first] = pair.second;
+      }
+      obj[segment] = dynamic::array(previous);
+      previous = obj;
+    }
   }
+
   return previous;
 }
 
@@ -130,22 +147,6 @@ string DatastoreTransaction::toJson(lllyd_node* initial) {
   free(buff);
   return result;
 }
-
-// string DatastoreTransaction::toJson(lllyd_node* initial) {
-//    char* buff2;
-//    lllyd_print_mem(&buff2, initial, LLLYD_XML, LLLYP_WD_ALL | LLLYP_FORMAT);
-//    MLOG(MINFO) << "XML data su: " << buff2;
-//    free(buff2);
-//    MLOG(MINFO) << "koniec XML";
-//
-//  char* buff;
-//  lllyd_print_mem(&buff, initial, LLLYD_JSON, LLLYP_WD_ALL | LLLYP_FORMAT);
-//  string result(buff);
-//    MLOG(MINFO) << "JSON data su: " << buff;
-//    MLOG(MINFO) << "koniec JSON";
-//  free(buff);
-//  return result;
-//}
 
 DatastoreTransaction::DatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState)

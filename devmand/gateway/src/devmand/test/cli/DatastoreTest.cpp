@@ -6,7 +6,6 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #define LOG_WITH_GLOG
-#include <magma_logging.h>
 #include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
@@ -17,6 +16,7 @@
 #include <devmand/test/cli/utils/SampleJsons.h>
 #include <folly/json.h>
 #include <gtest/gtest.h>
+#include <magma_logging.h>
 
 namespace devmand {
 namespace test {
@@ -25,7 +25,10 @@ namespace cli {
 using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
 using devmand::test::utils::cli::newInterface;
+using devmand::test::utils::cli::newInterfaceTopPath;
 using devmand::test::utils::cli::openconfigInterfacesInterfaces;
+using devmand::test::utils::cli::pokusState;
+using devmand::test::utils::cli::updatedIface85;
 using folly::parseJson;
 using folly::toPrettyJson;
 using std::runtime_error;
@@ -37,6 +40,15 @@ class DatastoreTest : public ::testing::Test {
   shared_ptr<ModelRegistry> mregsh;
   shared_ptr<YdkDynamicCodec> codec;
   void SetUp() override {
+    // TODO move somewhere global
+    // set extensions and user_types for non-YDK libyang
+    //      setenv(
+    //              "LLLIBYANG_EXTENSIONS_PLUGINS_DIR",
+    //              LLLIBYANG_EXTENSIONS_PLUGINS_DIR,
+    //              false);
+    //      setenv(
+    //              "LIBYANG_USER_TYPES_PLUGINS_DIR",
+    //              LIBYANG_USER_TYPES_PLUGINS_DIR, false);
     devmand::test::utils::log::initLog();
     mregsh = make_shared<ModelRegistry>();
     codec = make_shared<YdkDynamicCodec>(mregsh);
@@ -165,6 +177,42 @@ TEST_F(DatastoreTest, identifyInvalidTree) {
       "/openconfig-interfaces:interfaces/interface[name='0/2']/config");
 
   EXPECT_FALSE(transaction->isValid());
+}
+
+TEST_F(DatastoreTest, mergeInterface2) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+
+  transaction->write(newInterfaceTopPath, parseJson(newInterface));
+
+  dynamic data = transaction->read(newInterfaceTopPath);
+  data["openconfig-interfaces:interface"][0]["state"]["mtu"] = 1555;
+  transaction->merge(
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface",
+      data);
+
+  MLOG(MINFO) << toPrettyJson(transaction->read(newInterfaceTopPath));
+}
+
+TEST_F(DatastoreTest, mergeInterface) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+  transaction->write(newInterfaceTopPath, parseJson(newInterface));
+
+  dynamic state = transaction->read(newInterfaceTopPath + "/state");
+  state["openconfig-interfaces:state"]["mtu"] = 1555;
+  state["openconfig-interfaces:state"]["oper-status"] = "UP";
+  // transaction->merge("/openconfig-interfaces:interfaces/interface[name='0/85']/state",
+  // data);
+  transaction->merge(newInterfaceTopPath + "/state", state);
+
+  state = transaction->read(newInterfaceTopPath + "/state");
+  EXPECT_EQ(state["openconfig-interfaces:state"]["mtu"], 1555);
+  EXPECT_EQ(state["openconfig-interfaces:state"]["oper-status"], "UP");
 }
 
 } // namespace cli

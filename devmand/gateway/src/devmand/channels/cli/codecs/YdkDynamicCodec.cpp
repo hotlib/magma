@@ -13,10 +13,10 @@ YdkDynamicCodec::YdkDynamicCodec(const shared_ptr<ModelRegistry> _mreg)
     : mreg(_mreg) {}
 
 dynamic YdkDynamicCodec::convert(shared_ptr<Entity> entity) {
-  (void) entity;
-  //TODO neviem co s tymto
-//  auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
-//  return parseJson(bundle.encode(*entity));
-return nullptr;
+  (void)entity;
+  // TODO neviem co s tymto
+  //  auto& bundle = mreg->getBundle(Model::OPENCONFIG_0_1_6);
+  //  return parseJson(bundle.encode(*entity));
+  return nullptr;
 }
 } // namespace devmand::channels::cli::codecs
