@@ -6,8 +6,10 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #pragma once
+#include <devmand/devices/cli/schema/Path.h>
 
 namespace devmand::test::utils::cli {
+using devmand::devices::cli::Path;
 
 string openconfigInterfacesInterfaces =
     "{\n"
@@ -114,8 +116,8 @@ string openconfigInterfacesInterfaces =
     "  }\n"
     "}";
 
-string newInterfaceTopPath =
-    "/openconfig-interfaces:interfaces/interface[name='0/85']";
+Path newInterfaceTopPath(
+    "/openconfig-interfaces:interfaces/interface[name='0/85']");
 
 string newInterface =
     "{\n"
@@ -160,88 +162,6 @@ string newInterface =
     "        }\n"
     "      }\n"
     "    ]\n"
-    "}";
-
-string updatedIface85 =
-    "{\n"
-    "  \"openconfig-interfaces:interfaces\": {\n"
-    "      \"openconfig-interfaces:interface\": [\n"
-    "        {\n"
-    "          \"state\": {\n"
-    "            \"type\": \"iana-if-type:ethernetCsmacd\",\n"
-    "            \"oper-status\": \"DOWN\",\n"
-    "            \"name\": \"0/85\",\n"
-    "            \"mtu\": 1555,\n"
-    "            \"enabled\": true,\n"
-    "            \"description\": \"Some descr\",\n"
-    "            \"counters\": {\n"
-    "              \"out-unicast-pkts\": \"125182\",\n"
-    "              \"out-octets\": \"72669652\",\n"
-    "              \"out-multicast-pkts\": \"325039\",\n"
-    "              \"out-errors\": \"0\",\n"
-    "              \"out-discards\": \"0\",\n"
-    "              \"out-broadcast-pkts\": \"7628\",\n"
-    "              \"in-unicast-pkts\": \"293117\",\n"
-    "              \"in-octets\": \"427066814515\",\n"
-    "              \"in-multicast-pkts\": \"5769311\",\n"
-    "              \"in-errors\": \"0\",\n"
-    "              \"in-discards\": \"0\",\n"
-    "              \"in-broadcast-pkts\": \"2767640\"\n"
-    "            },\n"
-    "            \"admin-status\": \"UP\"\n"
-    "          },\n"
-    "          \"config\": {\n"
-    "            \"type\": \"iana-if-type:ethernetCsmacd\",\n"
-    "            \"name\": \"0/85\",\n"
-    "            \"mtu\": 1500,\n"
-    "            \"enabled\": true,\n"
-    "            \"description\": \"This is ifc  0/85\"\n"
-    "          },\n"
-    "          \"hold-time\": {\n"
-    "            \"config\": {\n"
-    "              \"down\": 0,\n"
-    "              \"up\": 0\n"
-    "            },\n"
-    "            \"state\": {\n"
-    "              \"up\": 0,\n"
-    "              \"down\": 0\n"
-    "            }\n"
-    "          },\n"
-    "          \"name\": \"0/85\"\n"
-    "        }\n"
-    "      ]\n"
-    "  }\n"
-    "}";
-
-string pokusState =
-    "{\n"
-    "  \"openconfig-interfaces:interfaces\": {\n"
-    "    \"openconfig-interfaces:interface\": {\n"
-    "      \"openconfig-interfaces:state\": {\n"
-    "        \"type\": \"iana-if-type:ethernetCsmacd\",\n"
-    "        \"oper-status\": \"DOWN\",\n"
-    "        \"name\": \"0/85\",\n"
-    "        \"mtu\": 1555,\n"
-    "        \"enabled\": true,\n"
-    "        \"description\": \"Some descr\",\n"
-    "        \"counters\": {\n"
-    "          \"out-unicast-pkts\": \"125182\",\n"
-    "          \"out-octets\": \"72669652\",\n"
-    "          \"out-multicast-pkts\": \"325039\",\n"
-    "          \"out-errors\": \"0\",\n"
-    "          \"out-discards\": \"0\",\n"
-    "          \"out-broadcast-pkts\": \"7628\",\n"
-    "          \"in-unicast-pkts\": \"293117\",\n"
-    "          \"in-octets\": \"427066814515\",\n"
-    "          \"in-multicast-pkts\": \"5769311\",\n"
-    "          \"in-errors\": \"0\",\n"
-    "          \"in-discards\": \"0\",\n"
-    "          \"in-broadcast-pkts\": \"2767640\"\n"
-    "        },\n"
-    "        \"admin-status\": \"UP\"\n"
-    "      }\n"
-    "    }\n"
-    "  }\n"
     "}";
 
 } // namespace devmand::test::utils::cli

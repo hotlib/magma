@@ -10,10 +10,13 @@
 #include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
+#include <devmand/devices/cli/schema/Path.h>
 
 namespace devmand::channels::cli::datastore {
 using LeafVector = std::vector<pair<string, string>>;
 using devmand::channels::cli::codecs::YdkDynamicCodec;
+using devmand::devices::cli::Path;
+
 class BindingAwareDatastoreTransaction {
  private:
   DatastoreTransaction datastoreTransaction;
@@ -27,12 +30,12 @@ class BindingAwareDatastoreTransaction {
 
  public:
   template <typename T>
-  shared_ptr<T> read(string path) {
+  shared_ptr<T> read(Path path) {
     return codec->convert2<T>(datastoreTransaction.read(path));
   }
   void diff();
-  void delete_(string path);
-  void write(string path, shared_ptr<Entity> entity);
+  void delete_(Path path);
+  void write(Path path, shared_ptr<Entity> entity);
   void create(shared_ptr<Entity> entity);
   bool isValid();
 

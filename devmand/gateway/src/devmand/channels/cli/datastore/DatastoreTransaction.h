@@ -9,6 +9,7 @@
 
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
+#include <devmand/devices/cli/schema/Path.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <libyang/libyang.h>
@@ -27,6 +28,7 @@ using ListKeys = std::vector<string>;
 using devmand::channels::cli::datastore::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
+using devmand::devices::cli::Path;
 using folly::dynamic;
 using folly::parseJson;
 using std::atomic_bool;
@@ -45,22 +47,21 @@ class DatastoreTransaction {
   void print();
   static void print(LeafVector& v);
   static void printDiffType(LLLYD_DIFFTYPE type);
-  static std::vector<string> fixSegments(std::vector<string> str); // TODO hack
   void print(lllyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lllyd_node* initial);
-  static dynamic appendAllParents(string path, const dynamic& aDynamic);
+  static dynamic appendAllParents(Path path, const dynamic& aDynamic);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
-  dynamic read(string path);
+  dynamic read(Path path);
 
   void diff();
   bool isValid();
-  void delete_(string path);
-  void merge(string path, const dynamic& aDynamic);
-  void write(string path, const dynamic& aDynamic);
+  void delete_(Path path);
+  void merge(Path path, const dynamic& aDynamic);
+  void write(Path path, const dynamic& aDynamic);
   void commit();
   void abort();
 

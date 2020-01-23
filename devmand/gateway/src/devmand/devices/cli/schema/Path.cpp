@@ -23,11 +23,13 @@ const Path Path::ROOT = Path(PATH_SEPARATOR);
 
 Path::Path(const string& _path) : path(_path) {
   if (_path.empty()) {
-    throw InvalidPathException(path, "Empty path");
+    // throw InvalidPathException(path, "Empty path"); //TODO why?
+    MLOG(MWARNING) << "empty path created";
   }
   // equivalent to _path.startsWith(PATH_SEPARATOR)
   if (_path.rfind(PATH_SEPARATOR, 0) != 0) {
-    throw InvalidPathException(path, "Not an absolute path");
+    // throw InvalidPathException(path, "Not an absolute path"); //TODO why?
+    MLOG(MWARNING) << "path separator not found";
   }
 
   // TODO
@@ -296,8 +298,16 @@ bool operator>=(const Path& lhs, const Path& rhs) {
   return !(lhs < rhs);
 }
 
+Path operator+(const Path& lhs, const Path& rhs) {
+  return Path(lhs.str() + rhs.str());
+}
+
 string Path::str() const {
   return path;
+}
+
+bool Path::empty() const {
+  return path.empty();
 }
 
 } // namespace cli

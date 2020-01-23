@@ -14,12 +14,12 @@ void BindingAwareDatastoreTransaction::diff() {
   datastoreTransaction.diff();
 }
 
-void BindingAwareDatastoreTransaction::delete_(string path) {
+void BindingAwareDatastoreTransaction::delete_(Path path) {
   datastoreTransaction.delete_(path);
 }
 
 void BindingAwareDatastoreTransaction::write(
-    string path,
+    Path path,
     shared_ptr<Entity> entity) {
   datastoreTransaction.write(path, codec->convert(entity));
 }

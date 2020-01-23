@@ -7,17 +7,16 @@
 
 #include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
-#include <devmand/devices/cli/schema/Path.h>
 #include <libyang/tree_data.h>
 #include <libyang/tree_schema.h>
 
 namespace devmand::channels::cli::datastore {
 
-using devmand::devices::cli::Path;
 using std::runtime_error;
 
-void DatastoreTransaction::delete_(string path) {
+void DatastoreTransaction::delete_(Path p) {
   checkIfCommitted();
+  string path = p.str();
   if (path.empty() || root == nullptr) {
     return;
   }
@@ -34,7 +33,7 @@ void DatastoreTransaction::delete_(string path) {
   llly_set_free(pSet);
 }
 
-void DatastoreTransaction::write(const string path, const dynamic& aDynamic) {
+void DatastoreTransaction::write(const Path path, const dynamic& aDynamic) {
   delete_(path);
   merge(path, aDynamic);
   // print(root);
@@ -49,14 +48,12 @@ lllyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
 }
 
 dynamic DatastoreTransaction::appendAllParents(
-    string path,
+    Path p,
     const dynamic& aDynamic) {
-  if (path.empty()) {
+  if (p.empty()) {
     return aDynamic;
   }
   dynamic previous = aDynamic;
-
-  Path p(path);
 
   const std::vector<string>& segments = p.unkeyed().getSegments();
 
@@ -80,7 +77,7 @@ dynamic DatastoreTransaction::appendAllParents(
   return previous;
 }
 
-void DatastoreTransaction::merge(const string path, const dynamic& aDynamic) {
+void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   checkIfCommitted();
   if (!path.empty()) {
     dynamic withParents = appendAllParents(path, aDynamic);
@@ -196,32 +193,6 @@ void DatastoreTransaction::checkIfCommitted() {
         "transaction already committed or aborted, no operations available");
   }
 }
-// TODO temporary hack
-std::vector<string> DatastoreTransaction::fixSegments(std::vector<string> str) {
-  std::vector<string> final;
-  string broken;
-  broken.assign("");
-
-  for (const auto& s : str) {
-    if (s.empty())
-      continue;
-    unsigned long found = s.find("'");
-    if (found != std::string::npos) {
-      if (broken.empty()) {
-        broken.assign(s);
-      } else {
-        string ss = s + "/" + broken;
-        final.push_back(ss);
-        broken.assign("");
-      }
-      continue;
-    }
-    final.push_back(s);
-  }
-  final.erase(final.begin());
-
-  return final;
-}
 
 void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   switch (type) {
@@ -245,17 +216,17 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   }
 }
 
-dynamic DatastoreTransaction::read(string path) {
+dynamic DatastoreTransaction::read(Path path) {
   checkIfCommitted();
 
-  llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.c_str()));
+  llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.str().c_str()));
 
   if (pSet == nullptr || pSet->number == 0) {
     return nullptr;
   }
 
   if (pSet->number > 1) {
-    throw runtime_error("Too many results from path: " + path);
+    throw runtime_error("Too many results from path: " + path.str());
   }
 
   const string& json = toJson(pSet->set.d[0]);
