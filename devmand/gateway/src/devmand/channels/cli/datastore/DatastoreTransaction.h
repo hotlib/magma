@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <devmand/channels/cli/datastore/DatastoreDiff.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <devmand/devices/cli/schema/Path.h>
@@ -25,6 +26,8 @@ using std::string;
 using ydk::Entity;
 using LeafVector = std::vector<pair<string, string>>;
 using ListKeys = std::vector<string>;
+using devmand::channels::cli::datastore::DatastoreDiff;
+using devmand::channels::cli::datastore::DatastoreDiffType;
 using devmand::channels::cli::datastore::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
@@ -46,7 +49,10 @@ class DatastoreTransaction {
   lllyd_node* dynamic2lydNode(dynamic entity);
   void print();
   static void print(LeafVector& v);
+  static lllyd_node* getNotNull(lllyd_node* a, lllyd_node* b);
   static void printDiffType(LLLYD_DIFFTYPE type);
+  static string buildFullPath(lllyd_node* node, string pathSoFar);
+  static DatastoreDiffType getDiffType(LLLYD_DIFFTYPE type);
   void print(lllyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lllyd_node* initial);
@@ -57,7 +63,7 @@ class DatastoreTransaction {
 
   dynamic read(Path path);
 
-  void diff();
+  map<Path, DatastoreDiff> diff();
   bool isValid();
   void delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);

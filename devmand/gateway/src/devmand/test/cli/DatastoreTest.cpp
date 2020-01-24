@@ -10,6 +10,7 @@
 #include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
+#include <devmand/channels/cli/datastore/DatastoreDiff.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/Datastore.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
@@ -24,6 +25,7 @@ namespace cli {
 
 using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
+using devmand::channels::cli::datastore::DatastoreDiff;
 using devmand::test::utils::cli::interface02TopPath;
 using devmand::test::utils::cli::newInterface;
 using devmand::test::utils::cli::newInterfaceTopPath;
@@ -223,6 +225,38 @@ TEST_F(DatastoreTest, changeLeaf) {
 
   enabled = transaction->read(interface02TopPath + "/state/enabled");
   EXPECT_EQ(enabled["openconfig-interfaces:enabled"], false);
+}
+
+TEST_F(DatastoreTest, changeLeafDiff) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+
+  transaction->commit();
+  transaction = datastore.newTx();
+  dynamic errors = transaction->read(interface02TopPath + "/state/counters");
+  errors["openconfig-interfaces:counters"]["out-errors"] = "777";
+  errors["openconfig-interfaces:counters"]["out-discards"] = "17";
+  transaction->merge(interface02TopPath + "/state/counters", errors);
+  const map<Path, DatastoreDiff>& map = transaction->diff();
+  EXPECT_EQ(map.size(), 2);
+  EXPECT_EQ(
+      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-discards")
+          .after["openconfig-interfaces:out-discards"],
+      "17");
+  EXPECT_EQ(
+      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-errors")
+          .after["openconfig-interfaces:out-errors"],
+      "777");
+  EXPECT_EQ(
+      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-discards")
+          .before["openconfig-interfaces:out-discards"],
+      "0");
+  EXPECT_EQ(
+      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-errors")
+          .before["openconfig-interfaces:out-errors"],
+      "0");
 }
 
 } // namespace cli

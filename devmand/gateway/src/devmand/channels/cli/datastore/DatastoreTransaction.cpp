@@ -12,6 +12,7 @@
 
 namespace devmand::channels::cli::datastore {
 
+using std::map;
 using std::runtime_error;
 
 void DatastoreTransaction::delete_(Path p) {
@@ -160,7 +161,7 @@ lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
   return n;
 }
 
-void DatastoreTransaction::diff() {
+map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   checkIfCommitted();
   if (datastoreState->isEmpty()) {
     throw runtime_error("Unable to diff, datastore tree does not yet exist");
@@ -171,12 +172,40 @@ void DatastoreTransaction::diff() {
     throw runtime_error("something went wrong, no diff possible");
   }
 
+  map<Path, DatastoreDiff> diffs;
   for (int j = 0; difflist->type[j] != LLLYD_DIFF_END; ++j) {
-    printDiffType(difflist->type[j]);
-    print(difflist->first[j]);
+    if (difflist->type[j] == LLLYD_DIFF_MOVEDAFTER1 ||
+        difflist->type[j] == LLLYD_DIFF_MOVEDAFTER2) {
+      continue; // skip node movement changes
+    }
+    DatastoreDiffType type = getDiffType(difflist->type[j]);
+    auto before = parseJson(toJson(difflist->first[j]));
+    auto after = parseJson(toJson(difflist->second[j]));
+
+    if (before == after) {
+      continue;
+    }
+
+    Path path = Path(
+        buildFullPath(getNotNull(difflist->first[j], difflist->second[j]), ""));
+
+    if (diffs.count(path)) {
+      continue;
+    }
+
+    auto pair = diffs.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(path),
+        std::forward_as_tuple(before, after, type));
+
+    if (not pair.second) {
+      // TODO not inserted do something
+      throw runtime_error("not inserted do something");
+    }
   }
 
   lllyd_free_diff(difflist);
+  return diffs;
 }
 
 DatastoreTransaction::~DatastoreTransaction() {
@@ -194,6 +223,36 @@ void DatastoreTransaction::checkIfCommitted() {
   }
 }
 
+DatastoreDiffType DatastoreTransaction::getDiffType(LLLYD_DIFFTYPE type) {
+  switch (type) {
+    case LLLYD_DIFF_DELETED:
+      return deleted;
+    case LLLYD_DIFF_CHANGED:
+      return update;
+    case LLLYD_DIFF_CREATED:
+      return create;
+    case LLLYD_DIFF_END:
+      throw runtime_error("this can never happen!"); // TODO hmm?
+    case LLLYD_DIFF_MOVEDAFTER1:
+      throw runtime_error("this can never happen!"); // TODO hmm?
+    case LLLYD_DIFF_MOVEDAFTER2:
+      throw runtime_error("this can never happen!"); // TODO hmm?
+    default:
+      throw runtime_error("this can never happen!"); // TODO hmm?
+  }
+}
+
+string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
+  string path("/");
+  path.append(node->schema->module->name)
+      .append(":")
+      .append(node->schema->name)
+      .append(pathSoFar);
+  if (node->parent == nullptr) {
+    return path;
+  }
+  return buildFullPath(node->parent, path);
+}
 void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   switch (type) {
     case LLLYD_DIFF_DELETED:
@@ -237,6 +296,13 @@ void DatastoreTransaction::print(LeafVector& v) {
   for (const auto& item : v) {
     MLOG(MINFO) << "full path: " << item.first << " data: " << item.second;
   }
+}
+
+lllyd_node* DatastoreTransaction::getNotNull(lllyd_node* a, lllyd_node* b) {
+  if (a == nullptr) {
+    return b;
+  }
+  return a;
 }
 
 bool DatastoreTransaction::isValid() {

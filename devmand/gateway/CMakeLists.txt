@@ -145,7 +145,8 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreDiff.h)
 
 target_link_libraries(devman_channel_cli
   devman)
