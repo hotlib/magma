@@ -7,24 +7,25 @@
 
 #include <boost/algorithm/string.hpp>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
+#include <devmand/channels/cli/datastore/Datastore.h>
 #include <libyang/tree_data.h>
 #include <libyang/tree_schema.h>
 
 namespace devmand::channels::cli::datastore {
 
 using std::map;
-using std::runtime_error;
+using devmand::channels::cli::datastore::DatastoreException;
 
-void DatastoreTransaction::delete_(Path p) {
+bool DatastoreTransaction::delete_(Path p) {
   checkIfCommitted();
   string path = p.str();
   if (path.empty() || root == nullptr) {
-    return;
+    return false;
   }
   llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.c_str()));
   if (pSet == nullptr) {
     MLOG(MDEBUG) << "Nothing to delete, " + path + " not found";
-    return;
+    return false;
   } else {
     MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   }
@@ -32,9 +33,10 @@ void DatastoreTransaction::delete_(Path p) {
     lllyd_free(pSet->set.d[j]);
   }
   llly_set_free(pSet);
+  return true;
 }
 
-void DatastoreTransaction::write(const Path path, const dynamic& aDynamic) {
+void DatastoreTransaction::overwrite(Path path, const dynamic& aDynamic) {
   delete_(path);
   merge(path, aDynamic);
   // print(root);
@@ -121,9 +123,9 @@ void DatastoreTransaction::abort() {
 
 void DatastoreTransaction::validateBeforeCommit() {
   if (!isValid()) {
-    string error = "model is invalid, won't commit changes to the datastore";
-    MLOG(MERROR) << error;
-    throw runtime_error(error);
+    DatastoreException ex("Model is invalid, won't commit changes to the datastore");
+    MLOG(MERROR) << ex.what();
+    throw ex;
   }
 }
 
@@ -164,12 +166,16 @@ lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
 map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   checkIfCommitted();
   if (datastoreState->isEmpty()) {
-    throw runtime_error("Unable to diff, datastore tree does not yet exist");
+      DatastoreException ex("Unable to diff, datastore tree does not yet exist");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
   lllyd_difflist* difflist =
       lllyd_diff(datastoreState->root, root, LLLYD_DIFFOPT_WITHDEFAULTS);
   if (!difflist) {
-    throw runtime_error("something went wrong, no diff possible");
+      DatastoreException ex("Something went wrong, no diff possible");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
 
   map<Path, DatastoreDiff> diffs;
@@ -186,8 +192,8 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
       continue;
     }
 
-    Path path = Path(
-        buildFullPath(getNotNull(difflist->first[j], difflist->second[j]), ""));
+    Path path = Path(buildFullPath(
+        getExistingNode(difflist->first[j], difflist->second[j], type), ""));
 
     if (diffs.count(path)) {
       continue;
@@ -199,8 +205,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
         std::forward_as_tuple(before, after, type));
 
     if (not pair.second) {
-      // TODO not inserted do something
-      throw runtime_error("not inserted do something");
+        DatastoreException ex("Something went wrong during diff, can't diff");
+        MLOG(MWARNING) << ex.what();
+        throw ex;
     }
   }
 
@@ -218,27 +225,28 @@ DatastoreTransaction::~DatastoreTransaction() {
 
 void DatastoreTransaction::checkIfCommitted() {
   if (hasCommited) {
-    throw runtime_error(
-        "transaction already committed or aborted, no operations available");
+      DatastoreException ex("Transaction already committed or aborted, no operations available");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
 }
 
 DatastoreDiffType DatastoreTransaction::getDiffType(LLLYD_DIFFTYPE type) {
   switch (type) {
     case LLLYD_DIFF_DELETED:
-      return deleted;
+      return DatastoreDiffType::deleted;
     case LLLYD_DIFF_CHANGED:
-      return update;
+      return DatastoreDiffType::update;
     case LLLYD_DIFF_CREATED:
-      return create;
+      return DatastoreDiffType::create;
     case LLLYD_DIFF_END:
-      throw runtime_error("this can never happen!"); // TODO hmm?
+      throw DatastoreException("This diff type is not supported");
     case LLLYD_DIFF_MOVEDAFTER1:
-      throw runtime_error("this can never happen!"); // TODO hmm?
+            throw DatastoreException("This diff type is not supported");
     case LLLYD_DIFF_MOVEDAFTER2:
-      throw runtime_error("this can never happen!"); // TODO hmm?
+            throw DatastoreException("This diff type is not supported");
     default:
-      throw runtime_error("this can never happen!"); // TODO hmm?
+            throw DatastoreException("This diff type is not supported");
   }
 }
 
@@ -271,7 +279,7 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
       MLOG(MINFO) << "subtree was added:";
       break;
     case LLLYD_DIFF_END:
-      throw runtime_error("lllyD_DIFF_END can never be printed");
+        MLOG(MINFO) << "end of diff:";
   }
 }
 
@@ -285,7 +293,9 @@ dynamic DatastoreTransaction::read(Path path) {
   }
 
   if (pSet->number > 1) {
-    throw runtime_error("Too many results from path: " + path.str());
+      DatastoreException ex("Too many results from path: " + path.str() + " , query must target a unique element");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
 
   const string& json = toJson(pSet->set.d[0]);
@@ -298,18 +308,26 @@ void DatastoreTransaction::print(LeafVector& v) {
   }
 }
 
-lllyd_node* DatastoreTransaction::getNotNull(lllyd_node* a, lllyd_node* b) {
-  if (a == nullptr) {
+lllyd_node* DatastoreTransaction::getExistingNode(
+    lllyd_node* a,
+    lllyd_node* b,
+    DatastoreDiffType type) {
+  if (type == DatastoreDiffType::create && b != nullptr) {
     return b;
   }
-  return a;
+  if (type == DatastoreDiffType::deleted && a != nullptr) {
+    return a;
+  }
+
+  return a == nullptr ? b : a;
 }
 
 bool DatastoreTransaction::isValid() {
   checkIfCommitted();
   if (root == nullptr) {
-    throw runtime_error(
-        "datastore is empty and no changes performed, nothing to validate");
+      DatastoreException ex("Datastore is empty and no changes performed, nothing to validate");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
   return lllyd_validate(&root, datastoreTypeToLydOption(), nullptr) == 0;
 }

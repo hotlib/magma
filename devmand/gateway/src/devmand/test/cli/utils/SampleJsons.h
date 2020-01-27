@@ -122,6 +122,8 @@ Path newInterfaceTopPath(
 Path interface02TopPath(
     "/openconfig-interfaces:interfaces/interface[name='0/2']");
 
+string operStatus = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:oper-status";
+
 string newInterface =
     "{\n"
     "  \"openconfig-interfaces:interface\": [\n"
@@ -165,6 +167,36 @@ string newInterface =
     "        }\n"
     "      }\n"
     "    ]\n"
+    "}";
+
+string interfaceCounters =
+    "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters";
+
+string interface02state =
+    "{\n"
+    "  \"openconfig-interfaces:state\": {\n"
+    "    \"admin-status\": \"UP\",\n"
+    "    \"counters\": {\n"
+    "      \"in-broadcast-pkts\": \"2767640\",\n"
+    "      \"in-discards\": \"0\",\n"
+    "      \"in-errors\": \"0\",\n"
+    "      \"in-multicast-pkts\": \"5769311\",\n"
+    "      \"in-octets\": \"427066814515\",\n"
+    "      \"in-unicast-pkts\": \"293117\",\n"
+    "      \"out-broadcast-pkts\": \"7628\",\n"
+    "      \"out-discards\": \"0\",\n"
+    "      \"out-errors\": \"0\",\n"
+    "      \"out-multicast-pkts\": \"325039\",\n"
+    "      \"out-octets\": \"72669652\",\n"
+    "      \"out-unicast-pkts\": \"125182\"\n"
+    "    },\n"
+    "    \"description\": \"Some descr\",\n"
+    "    \"enabled\": true,\n"
+    "    \"mtu\": 1518,\n"
+    "    \"name\": \"0/2\",\n"
+    "    \"oper-status\": \"DOWN\",\n"
+    "    \"type\": \"iana-if-type:ethernetCsmacd\"\n"
+    "  }\n"
     "}";
 
 } // namespace devmand::test::utils::cli

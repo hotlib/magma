@@ -21,7 +21,7 @@ void BindingAwareDatastoreTransaction::delete_(Path path) {
 void BindingAwareDatastoreTransaction::write(
     Path path,
     shared_ptr<Entity> entity) {
-  datastoreTransaction.write(path, codec->convert(entity));
+    datastoreTransaction.overwrite(path, codec->convert(entity));
 }
 
 void BindingAwareDatastoreTransaction::create(shared_ptr<Entity> entity) {

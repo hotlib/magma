@@ -35,6 +35,7 @@ using devmand::devices::cli::Path;
 using folly::dynamic;
 using folly::parseJson;
 using std::atomic_bool;
+using std::runtime_error;
 
 namespace devmand::channels::cli::datastore {
 
@@ -49,7 +50,8 @@ class DatastoreTransaction {
   lllyd_node* dynamic2lydNode(dynamic entity);
   void print();
   static void print(LeafVector& v);
-  static lllyd_node* getNotNull(lllyd_node* a, lllyd_node* b);
+  static lllyd_node*
+  getExistingNode(lllyd_node* a, lllyd_node* b, DatastoreDiffType type);
   static void printDiffType(LLLYD_DIFFTYPE type);
   static string buildFullPath(lllyd_node* node, string pathSoFar);
   static DatastoreDiffType getDiffType(LLLYD_DIFFTYPE type);
@@ -65,9 +67,9 @@ class DatastoreTransaction {
 
   map<Path, DatastoreDiff> diff();
   bool isValid();
-  void delete_(Path path);
+  bool delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);
-  void write(Path path, const dynamic& aDynamic);
+  void overwrite(Path path, const dynamic& aDynamic);
   void commit();
   void abort();
 

@@ -9,7 +9,7 @@
 
 namespace devmand::channels::cli::datastore {
 using std::make_unique;
-using std::runtime_error;
+using devmand::channels::cli::datastore::DatastoreException;
 
 Datastore::Datastore(
     const shared_ptr<YdkDynamicCodec> _codec,
@@ -35,8 +35,9 @@ unique_ptr<BindingAwareDatastoreTransaction> Datastore::newBindingTx() {
 
 void Datastore::checkIfTransactionRunning() {
   if (datastoreState->transactionUnderway) {
-    throw runtime_error(
-        "Transaction in datastore already running, only 1 at a time permitted");
+      DatastoreException ex("Transaction in datastore already running, only 1 at a time permitted");
+      MLOG(MWARNING) << ex.what();
+      throw ex;
   }
 }
 

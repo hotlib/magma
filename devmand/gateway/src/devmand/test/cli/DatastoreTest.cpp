@@ -25,14 +25,17 @@ namespace cli {
 
 using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
+using devmand::channels::cli::datastore::DatastoreException;
 using devmand::channels::cli::datastore::DatastoreDiff;
+using devmand::test::utils::cli::interface02state;
 using devmand::test::utils::cli::interface02TopPath;
+using devmand::test::utils::cli::operStatus;
+using devmand::test::utils::cli::interfaceCounters;
 using devmand::test::utils::cli::newInterface;
 using devmand::test::utils::cli::newInterfaceTopPath;
 using devmand::test::utils::cli::openconfigInterfacesInterfaces;
 using folly::parseJson;
 using folly::toPrettyJson;
-using std::runtime_error;
 using std::to_string;
 using std::unique_ptr;
 
@@ -60,7 +63,7 @@ TEST_F(DatastoreTest, commitWorks) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
   transaction->commit();
   transaction = datastore.newTx();
   dynamic data = transaction->read("/openconfig-interfaces:interfaces");
@@ -78,7 +81,7 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermitted) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  EXPECT_THROW(datastore.newTx(), runtime_error);
+  EXPECT_THROW(datastore.newTx(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, abortDisablesRunningTransaction) {
@@ -86,38 +89,38 @@ TEST_F(DatastoreTest, abortDisablesRunningTransaction) {
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->abort();
-  EXPECT_THROW(transaction->read("whatever"), runtime_error);
-  EXPECT_THROW(transaction->write("", dynamic::object()), runtime_error);
-  EXPECT_THROW(transaction->merge("", dynamic::object()), runtime_error);
-  EXPECT_THROW(transaction->abort(), runtime_error);
-  EXPECT_THROW(transaction->delete_("whatever"), runtime_error);
-  EXPECT_THROW(transaction->commit(), runtime_error);
-  EXPECT_THROW(transaction->isValid(), runtime_error);
-  EXPECT_THROW(transaction->diff(), runtime_error);
+  EXPECT_THROW(transaction->read("whatever"), DatastoreException);
+  EXPECT_THROW(transaction->overwrite("", dynamic::object()), DatastoreException);
+  EXPECT_THROW(transaction->merge("", dynamic::object()), DatastoreException);
+  EXPECT_THROW(transaction->abort(), DatastoreException);
+  EXPECT_THROW(transaction->delete_("whatever"), DatastoreException);
+  EXPECT_THROW(transaction->commit(), DatastoreException);
+  EXPECT_THROW(transaction->isValid(), DatastoreException);
+  EXPECT_THROW(transaction->diff(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, commitDisablesRunningTransaction) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
 
   transaction->commit();
-  EXPECT_THROW(transaction->read("whatever"), runtime_error);
-  EXPECT_THROW(transaction->write("", dynamic::object()), runtime_error);
-  EXPECT_THROW(transaction->merge("", dynamic::object()), runtime_error);
-  EXPECT_THROW(transaction->abort(), runtime_error);
-  EXPECT_THROW(transaction->delete_("whatever"), runtime_error);
-  EXPECT_THROW(transaction->commit(), runtime_error);
-  EXPECT_THROW(transaction->isValid(), runtime_error);
-  EXPECT_THROW(transaction->diff(), runtime_error);
+  EXPECT_THROW(transaction->read("whatever"), DatastoreException);
+  EXPECT_THROW(transaction->overwrite("", dynamic::object()), DatastoreException);
+  EXPECT_THROW(transaction->merge("", dynamic::object()), DatastoreException);
+  EXPECT_THROW(transaction->abort(), DatastoreException);
+  EXPECT_THROW(transaction->delete_("whatever"), DatastoreException);
+  EXPECT_THROW(transaction->commit(), DatastoreException);
+  EXPECT_THROW(transaction->isValid(), DatastoreException);
+  EXPECT_THROW(transaction->diff(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, commitEndsRunningTransaction) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
 
   transaction->commit();
   EXPECT_NO_THROW(datastore.newTx());
@@ -127,7 +130,7 @@ TEST_F(DatastoreTest, dontAllowEmptyCommit) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  EXPECT_THROW(transaction->commit(), runtime_error);
+  EXPECT_THROW(transaction->commit(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, abortEndsRunningTransaction) {
@@ -142,7 +145,7 @@ TEST_F(DatastoreTest, deleteSubtrees) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
   const char* interface03 =
       "/openconfig-interfaces:interfaces/interface[name='0/3']";
   EXPECT_TRUE(transaction->read(interface03) != nullptr);
@@ -156,11 +159,11 @@ TEST_F(DatastoreTest, writeNewInterface) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write("", parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
   const char* interface85 =
       "/openconfig-interfaces:interfaces/interface[name='0/85']";
 
-  transaction->write(interface85, parseJson(newInterface));
+        transaction->overwrite(interface85, parseJson(newInterface));
 
   dynamic data = transaction->read(
       "/openconfig-interfaces:interfaces/interface[name='0/85']");
@@ -173,7 +176,7 @@ TEST_F(DatastoreTest, identifyInvalidTree) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
   transaction->delete_(
       "/openconfig-interfaces:interfaces/interface[name='0/2']/config");
 
@@ -185,8 +188,8 @@ TEST_F(DatastoreTest, mergeChangesInterface) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
-  transaction->write(newInterfaceTopPath, parseJson(newInterface));
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(newInterfaceTopPath, parseJson(newInterface));
 
   dynamic state = transaction->read(newInterfaceTopPath + "/state");
   state["openconfig-interfaces:state"]["mtu"] = 1555;
@@ -203,7 +206,7 @@ TEST_F(DatastoreTest, mergeErasedValueOriginalValueUnchangedInterface) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
 
   dynamic state = transaction->read(interface02TopPath + "/state");
   state["openconfig-interfaces:state"].erase("mtu");
@@ -216,7 +219,7 @@ TEST_F(DatastoreTest, changeLeaf) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
 
   dynamic enabled = transaction->read(interface02TopPath + "/state/enabled");
   MLOG(MINFO) << toPrettyJson(enabled);
@@ -231,7 +234,7 @@ TEST_F(DatastoreTest, changeLeafDiff) {
   Datastore datastore(codec, Datastore::operational());
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
-  transaction->write(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
 
   transaction->commit();
   transaction = datastore.newTx();
@@ -241,22 +244,91 @@ TEST_F(DatastoreTest, changeLeafDiff) {
   transaction->merge(interface02TopPath + "/state/counters", errors);
   const map<Path, DatastoreDiff>& map = transaction->diff();
   EXPECT_EQ(map.size(), 2);
+
+  Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
+  Path outErrors(interfaceCounters + "/openconfig-interfaces:out-errors");
   EXPECT_EQ(
-      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-discards")
-          .after["openconfig-interfaces:out-discards"],
-      "17");
+      map.at(outDiscards).after["openconfig-interfaces:out-discards"], "17");
+  EXPECT_EQ(map.at(outErrors).after["openconfig-interfaces:out-errors"], "777");
   EXPECT_EQ(
-      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-errors")
-          .after["openconfig-interfaces:out-errors"],
-      "777");
+      map.at(outDiscards).before["openconfig-interfaces:out-discards"], "0");
+  EXPECT_EQ(map.at(outErrors).before["openconfig-interfaces:out-errors"], "0");
+  EXPECT_EQ(map.at(outDiscards).type, DatastoreDiffType::update);
+  EXPECT_EQ(map.at(outErrors).type, DatastoreDiffType::update);
+}
+
+TEST_F(DatastoreTest, deleteSubtreeDiff) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
+
+  transaction->commit();
+  transaction = datastore.newTx();
+  Path stateToDelete(interface02TopPath + "/state");
+  transaction->delete_(stateToDelete);
+
+  const map<Path, DatastoreDiff>& map = transaction->diff();
+  EXPECT_EQ(map.size(), 1);
+  Path stateKey(
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state");
+  EXPECT_EQ(map.begin()->first.str(), stateKey.str());
+  EXPECT_EQ(toPrettyJson(map.at(stateKey).before), interface02state);
+  EXPECT_EQ(toPrettyJson(map.at(stateKey).after), "{}");
+  EXPECT_EQ(map.at(stateKey).type, DatastoreDiffType::deleted);
+}
+
+TEST_F(DatastoreTest, diffAfterWrite) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+        transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
+  transaction->commit();
+  transaction = datastore.newTx();
+  const char* interface85 =
+      "/openconfig-interfaces:interfaces/interface[name='0/85']";
+
+        transaction->overwrite(interface85, parseJson(newInterface));
+  const map<Path, DatastoreDiff>& map = transaction->diff();
+  Path diffKey(
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
+  EXPECT_EQ(map.size(), 1);
   EXPECT_EQ(
-      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-discards")
-          .before["openconfig-interfaces:out-discards"],
-      "0");
+      map.at(diffKey)
+          .after["openconfig-interfaces:interface"][0]["state"]["name"],
+      "0/85");
   EXPECT_EQ(
-      map.at("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters/openconfig-interfaces:out-errors")
-          .before["openconfig-interfaces:out-errors"],
-      "0");
+      map.at(diffKey)
+          .before["openconfig-interfaces:interfaces"]["interface"]
+          .size(),
+      3);
+  EXPECT_EQ(map.at(diffKey).type, DatastoreDiffType::create);
+  transaction->abort();
+}
+
+TEST_F(DatastoreTest, diffAfterMerge) {
+  Datastore datastore(codec, Datastore::operational());
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+        transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
+        transaction->overwrite(newInterfaceTopPath, parseJson(newInterface));
+
+  dynamic state = transaction->read(newInterfaceTopPath + "/state");
+  state["openconfig-interfaces:state"]["oper-status"] = "UP";
+  transaction->commit();
+  transaction = datastore.newTx();
+  transaction->merge(newInterfaceTopPath + "/state", state);
+
+  const map<Path, DatastoreDiff>& map = transaction->diff();
+  Path diffKey(operStatus);
+  MLOG(MINFO) << "FIRST: " << map.at(diffKey).before;
+  EXPECT_EQ(
+      map.at(diffKey).before["openconfig-interfaces:oper-status"], "DOWN");
+  EXPECT_EQ(map.at(diffKey).after["openconfig-interfaces:oper-status"], "UP");
+  EXPECT_EQ(map.size(), 1);
+  EXPECT_EQ(map.at(diffKey).type, DatastoreDiffType::update);
+
+  transaction->abort();
 }
 
 } // namespace cli

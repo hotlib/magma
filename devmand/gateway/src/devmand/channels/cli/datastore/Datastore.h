@@ -40,4 +40,9 @@ class Datastore {
   unique_ptr<BindingAwareDatastoreTransaction>
   newBindingTx(); // operations on transaction are NOT thread-safe
 };
+
+    class DatastoreException : public runtime_error {
+    public:
+        DatastoreException(const string& _msg) : runtime_error(_msg){};
+    };
 } // namespace devmand::channels::cli::datastore
