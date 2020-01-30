@@ -145,9 +145,12 @@ bool SchemaContext::isPathValid(Path path) const {
     return true;
   }
 
+  MLOG(MINFO) << "isPathValid BEFORE " << path.str();
   void* schema =
       llly_path_data2schema(ctx, const_cast<char*>(path.str().c_str()));
-  auto result = schema != nullptr;
+    MLOG(MINFO) << "isPathValid AFTER";
+
+    auto result = schema != nullptr;
   free(schema);
   return result;
 }

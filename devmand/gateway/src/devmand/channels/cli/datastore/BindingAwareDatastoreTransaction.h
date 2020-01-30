@@ -23,7 +23,6 @@ class BindingAwareDatastoreTransaction {
  private:
   DatastoreTransaction datastoreTransaction;
   shared_ptr<BindingCodec> codec;
-  atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
 
  public:
   BindingAwareDatastoreTransaction(
@@ -37,13 +36,14 @@ class BindingAwareDatastoreTransaction {
     const dynamic& data = datastoreTransaction.read(path);
     return codec->decode(toJson(data), ydkData);
   }
-  void diff();
+  map<Path, DatastoreDiff> diff();
   void delete_(Path path);
   void overwrite(Path path, shared_ptr<Entity> entity);
-  void create(shared_ptr<Entity> entity);
+  void merge(Path path, shared_ptr<Entity> entity);
   bool isValid();
 
   void commit();
+  void abort();
 };
 
 } // namespace devmand::channels::cli::datastore

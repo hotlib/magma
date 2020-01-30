@@ -11,6 +11,7 @@
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
 #include <devmand/channels/cli/datastore/DatastoreDiff.h>
+#include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/Datastore.h>
 #include <devmand/devices/cli/schema/BindingContext.h>
@@ -22,6 +23,9 @@
 #include <folly/json.h>
 #include <gtest/gtest.h>
 #include <ydk/path_api.hpp>
+#include <ydk_ietf/iana_if_type.hpp>
+#include <ydk_openconfig/openconfig_interfaces.hpp>
+#include <ydk_openconfig/openconfig_vlan_types.hpp>
 
 namespace devmand {
 namespace test {
@@ -30,6 +34,7 @@ namespace cli {
 using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
 using devmand::channels::cli::datastore::DatastoreDiff;
+using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
 using devmand::channels::cli::datastore::DatastoreException;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
@@ -44,6 +49,9 @@ using folly::parseJson;
 using folly::toPrettyJson;
 using std::to_string;
 using std::unique_ptr;
+    using OpenconfigInterfaces = openconfig::openconfig_interfaces::Interfaces;
+    using OpenconfigInterface = OpenconfigInterfaces::Interface;
+    using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
 
 class DatastoreTest : public ::testing::Test {
  protected:
@@ -65,6 +73,20 @@ class DatastoreTest : public ::testing::Test {
     codec = make_shared<YdkDynamicCodec>(mregsh);
   }
 };
+
+    static shared_ptr<OpenconfigInterface> interfaceCpp() {
+        auto interface = make_shared<OpenconfigInterface>();
+        interface->name = "loopback1";
+        interface->config->name = "loopback1";
+        interface->config->type = ietf::iana_if_type::SoftwareLoopback();
+        interface->config->mtu = 1500;
+        interface->state->ifindex = 1;
+        interface->ethernet->switched_vlan->config->access_vlan = 77;
+        interface->ethernet->switched_vlan->config->interface_mode = VlanType::TRUNK;
+        interface->ethernet->switched_vlan->config->trunk_vlans.append(1);
+        interface->ethernet->switched_vlan->config->trunk_vlans.append(100);
+        return interface;
+    }
 
 TEST_F(DatastoreTest, commitWorks) {
   Datastore datastore(Datastore::operational());
@@ -340,10 +362,16 @@ TEST_F(DatastoreTest, diffAfterMerge) {
   transaction->abort();
 }
 
-TEST_F(DatastoreTest, testcreate) {
-  Model model = Model::OPENCONFIG_0_1_6;
-  SchemaContext schemaCtx(model);
+TEST_F(DatastoreTest, testcreate1) {
+        Model model = Model::OPENCONFIG_0_1_6;
+        SchemaContext schemaCtx(model);
+        schemaCtx.isList("/openconfig-interfaces:interfaces/interface/name");
+  shared_ptr<OpenconfigInterface> openconfigInterface = interfaceCpp();
+  Datastore datastore(Datastore::operational());
+  const unique_ptr<BindingAwareDatastoreTransaction> &transaction = datastore.newBindingTx();
 
+  transaction->overwrite("/openconfig-interfaces:interfaces/interface[name='loopback1']", openconfigInterface);
+//  transaction->commit();
   //        ydk::path::Repository repo(model.getDir(),
   //        ydk::path::ModelCachingOption::COMMON); BindingCodec
   //        bindingCodec(repo, model.getDir(), schemaCtx); Repository repo;
