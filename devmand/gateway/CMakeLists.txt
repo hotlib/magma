@@ -9,8 +9,8 @@ set(MGM_COM_DIR /usr/lib/)
 add_definitions(-DLIBYANG_PLUGINS_DIR="/usr/lib/libyang/")
 
 # Pass libyang extensions and user_types for non-YDK libyang
-add_definitions(-DLLLIBYANG_EXTENSIONS_PLUGINS_DIR="/usr/lib/x86_64-linux-gnu/libyang/extensions/")
-add_definitions(-DLIBYANG_USER_TYPES_PLUGINS_DIR="/usr/lib/x86_64-linux-gnu/libyang/user_types")
+add_definitions(-DLLLIBYANG_EXTENSIONS_PLUGINS_DIR="/usr/lib/libyang/extensions")
+add_definitions(-DLIBYANG_USER_TYPES_PLUGINS_DIR="/usr/lib/libyang/user_types")
 
 add_definitions(-DPROTOBUF_INLINE_NOT_IN_HEADERS=0)
 
@@ -56,8 +56,7 @@ add_library(devman
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/FileUtils.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/FileWatcher.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/utils/Time.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/utils/YangUtils.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/codecs/YdkDynamicCodec.cpp)
+  ${PROJECT_SOURCE_DIR}/src/devmand/utils/YangUtils.cpp)
 
 target_link_libraries(devman
   boost_context

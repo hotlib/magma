@@ -7,7 +7,6 @@
 
 #define LOG_WITH_GLOG
 #include <magma_logging.h>
-#include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
 #include <devmand/channels/cli/datastore/DatastoreDiff.h>
@@ -31,7 +30,6 @@ namespace devmand {
 namespace test {
 namespace cli {
 
-using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::channels::cli::datastore::Datastore;
 using devmand::channels::cli::datastore::DatastoreDiff;
 using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
@@ -56,7 +54,6 @@ using std::unique_ptr;
 class DatastoreTest : public ::testing::Test {
  protected:
   shared_ptr<ModelRegistry> mregsh;
-  shared_ptr<YdkDynamicCodec> codec;
   void SetUp() override {
     // TODO move somewhere global
     //     set extensions and user_types for non-YDK libyang
@@ -70,7 +67,6 @@ class DatastoreTest : public ::testing::Test {
         false);
     devmand::test::utils::log::initLog();
     mregsh = make_shared<ModelRegistry>();
-    codec = make_shared<YdkDynamicCodec>(mregsh);
   }
 };
 
@@ -369,8 +365,8 @@ TEST_F(DatastoreTest, testcreate1) {
   shared_ptr<OpenconfigInterface> openconfigInterface = interfaceCpp();
   Datastore datastore(Datastore::operational());
   const unique_ptr<BindingAwareDatastoreTransaction> &transaction = datastore.newBindingTx();
-
-  transaction->overwrite("/openconfig-interfaces:interfaces/interface[name='loopback1']", openconfigInterface);
+  MLOG(MDEBUG) << "TUTO!!!!!";
+  transaction->merge("/openconfig-interfaces:interfaces/interface[name='loopback1']", openconfigInterface);
 //  transaction->commit();
   //        ydk::path::Repository repo(model.getDir(),
   //        ydk::path::ModelCachingOption::COMMON); BindingCodec

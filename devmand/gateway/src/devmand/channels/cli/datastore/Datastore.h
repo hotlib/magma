@@ -22,6 +22,7 @@ using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::DatastoreType;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::ModelRegistry;
+using devmand::devices::cli::SchemaContext;
 using std::shared_ptr;
 using std::unique_ptr;
 
@@ -29,6 +30,7 @@ class Datastore {
  private:
   shared_ptr<DatastoreState> datastoreState;
   shared_ptr<BindingCodec> bindingCodec;
+  shared_ptr<SchemaContext> schemaContext;
   void checkIfTransactionRunning();
   void setTransactionRunning();
 

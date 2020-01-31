@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <devmand/channels/cli/codecs/YdkDynamicCodec.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/cli/schema/BindingContext.h>
@@ -15,7 +14,6 @@
 
 namespace devmand::channels::cli::datastore {
 using LeafVector = std::vector<pair<string, string>>;
-using devmand::channels::cli::codecs::YdkDynamicCodec;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::Path;
 

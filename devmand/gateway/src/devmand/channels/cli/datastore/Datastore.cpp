@@ -14,12 +14,11 @@ using devmand::devices::cli::SchemaContext;
 using std::make_unique;
 Datastore::Datastore(DatastoreType type) {
   Model model = Model::OPENCONFIG_0_1_6;
-  SchemaContext schemaCtx(model);
-
+  schemaContext = std::make_shared<SchemaContext>(model);
   ydk::path::Repository repo(
       model.getDir(), ydk::path::ModelCachingOption::COMMON);
   bindingCodec =
-      std::make_shared<BindingCodec>(repo, model.getDir(), schemaCtx);
+      std::make_shared<BindingCodec>(repo, model.getDir(), *schemaContext);
 
   llly_ctx* pLyCtx = llly_ctx_new(model.getDir().c_str(), 0);
   llly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
