@@ -10,7 +10,6 @@
 #include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/Datastore.h>
 #include <devmand/channels/cli/datastore/DatastoreDiff.h>
-#include <devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h>
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <devmand/devices/Datastore.h>
 #include <devmand/devices/cli/schema/BindingContext.h>
@@ -30,9 +29,10 @@ namespace devmand {
 namespace test {
 namespace cli {
 
+using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
+using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::Datastore;
 using devmand::channels::cli::datastore::DatastoreDiff;
-using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
 using devmand::channels::cli::datastore::DatastoreException;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
@@ -47,9 +47,9 @@ using folly::parseJson;
 using folly::toPrettyJson;
 using std::to_string;
 using std::unique_ptr;
-    using OpenconfigInterfaces = openconfig::openconfig_interfaces::Interfaces;
-    using OpenconfigInterface = OpenconfigInterfaces::Interface;
-    using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
+using OpenconfigInterfaces = openconfig::openconfig_interfaces::Interfaces;
+using OpenconfigInterface = OpenconfigInterfaces::Interface;
+using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
 
 class DatastoreTest : public ::testing::Test {
  protected:
@@ -70,19 +70,23 @@ class DatastoreTest : public ::testing::Test {
   }
 };
 
-    static shared_ptr<OpenconfigInterface> interfaceCpp() {
-        auto interface = make_shared<OpenconfigInterface>();
-        interface->name = "loopback1";
-        interface->config->name = "loopback1";
-        interface->config->type = ietf::iana_if_type::SoftwareLoopback();
-        interface->config->mtu = 1500;
-        interface->state->ifindex = 1;
-        interface->ethernet->switched_vlan->config->access_vlan = 77;
-        interface->ethernet->switched_vlan->config->interface_mode = VlanType::TRUNK;
-        interface->ethernet->switched_vlan->config->trunk_vlans.append(1);
-        interface->ethernet->switched_vlan->config->trunk_vlans.append(100);
-        return interface;
-    }
+static shared_ptr<OpenconfigInterface> interfaceCpp() {
+  auto interface = make_shared<OpenconfigInterface>();
+  interface->name = "0/2";
+  interface->config->name = "0/2";
+  interface->config->enabled = true;
+  interface->config->mtu = 1500;
+  interface->config->type = ietf::iana_if_type::EthernetCsmacd();
+  interface->state->admin_status = "UP";
+  interface->state->description = "dummy state";
+  interface->state->enabled = true;
+  interface->state->mtu = 1518;
+  interface->state->oper_status = "DOWN";
+  interface->state->name = "0/2";
+  interface->state->type = ietf::iana_if_type::EthernetCsmacd();
+
+    return interface;
+}
 
 TEST_F(DatastoreTest, commitWorks) {
   Datastore datastore(Datastore::operational());
@@ -359,15 +363,25 @@ TEST_F(DatastoreTest, diffAfterMerge) {
 }
 
 TEST_F(DatastoreTest, testcreate1) {
-        Model model = Model::OPENCONFIG_0_1_6;
-        SchemaContext schemaCtx(model);
-        schemaCtx.isList("/openconfig-interfaces:interfaces/interface/name");
+  Model model = Model::OPENCONFIG_0_1_6;
+  SchemaContext schemaCtx(model);
+  schemaCtx.isList("/openconfig-interfaces:interfaces/interface/name");
   shared_ptr<OpenconfigInterface> openconfigInterface = interfaceCpp();
   Datastore datastore(Datastore::operational());
-  const unique_ptr<BindingAwareDatastoreTransaction> &transaction = datastore.newBindingTx();
-  MLOG(MDEBUG) << "TUTO!!!!!";
-  transaction->merge("/openconfig-interfaces:interfaces/interface[name='loopback1']", openconfigInterface);
-//  transaction->commit();
+  const unique_ptr<BindingAwareDatastoreTransaction>& transaction =
+      datastore.newBindingTx();
+  Path interface02("/openconfig-interfaces:interfaces/interface[name='0/2']");
+
+
+        transaction->overwrite("/openconfig-interfaces:interfaces/interface[name='0/2']", openconfigInterface);
+
+        transaction->read<OpenconfigInterface>(interface02);
+        transaction->commit();
+  //MLOG(MDEBUG) << openconfigInterfacesInterfaces;
+//  transaction->merge(
+//      "/openconfig-interfaces:interfaces/interface[name='0/2']",
+//      openconfigInterface);
+  //  transaction->commit();
   //        ydk::path::Repository repo(model.getDir(),
   //        ydk::path::ModelCachingOption::COMMON); BindingCodec
   //        bindingCodec(repo, model.getDir(), schemaCtx); Repository repo;

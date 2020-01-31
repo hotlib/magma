@@ -24,8 +24,10 @@ void BindingAwareDatastoreTransaction::overwrite(
   datastoreTransaction.overwrite(path, codec->toDom(path, *entity));
 }
 
-void BindingAwareDatastoreTransaction::merge(Path path, shared_ptr<Entity> entity) {
-   datastoreTransaction.merge(path, codec->toDom(path, *entity));
+void BindingAwareDatastoreTransaction::merge(
+    Path path,
+    shared_ptr<Entity> entity) {
+  datastoreTransaction.merge(path, codec->toDom(path, *entity));
 }
 
 void BindingAwareDatastoreTransaction::commit() {
@@ -41,7 +43,11 @@ bool BindingAwareDatastoreTransaction::isValid() {
   return datastoreTransaction.isValid();
 }
 
-    void BindingAwareDatastoreTransaction::abort() {
-        datastoreTransaction.abort();
+void BindingAwareDatastoreTransaction::abort() {
+  datastoreTransaction.abort();
+}
+
+    void BindingAwareDatastoreTransaction::print() {
+        datastoreTransaction.print();
     }
 } // namespace devmand::channels::cli::datastore

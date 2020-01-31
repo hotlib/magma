@@ -48,7 +48,6 @@ class DatastoreTransaction {
   static lllyd_node* computeRoot(lllyd_node* n);
   int datastoreTypeToLydOption();
   lllyd_node* dynamic2lydNode(dynamic entity);
-  void print();
   static void print(LeafVector& v);
   static lllyd_node*
   getExistingNode(lllyd_node* a, lllyd_node* b, DatastoreDiffType type);
@@ -64,7 +63,7 @@ class DatastoreTransaction {
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
   dynamic read(Path path);
-
+  void print();
   map<Path, DatastoreDiff> diff();
   bool isValid();
   bool delete_(Path path);

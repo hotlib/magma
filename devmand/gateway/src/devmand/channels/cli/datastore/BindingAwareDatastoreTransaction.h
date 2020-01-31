@@ -32,14 +32,14 @@ class BindingAwareDatastoreTransaction {
   shared_ptr<T> read(Path path) {
     const shared_ptr<T>& ydkData = make_shared<T>();
     const dynamic& data = datastoreTransaction.read(path);
-    return codec->decode(toJson(data), ydkData);
+    return std::static_pointer_cast<T>(codec->decode(toJson(data), ydkData));
   }
   map<Path, DatastoreDiff> diff();
   void delete_(Path path);
   void overwrite(Path path, shared_ptr<Entity> entity);
   void merge(Path path, shared_ptr<Entity> entity);
   bool isValid();
-
+  void print();
   void commit();
   void abort();
 };

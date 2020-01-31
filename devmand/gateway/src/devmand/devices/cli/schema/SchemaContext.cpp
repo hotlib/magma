@@ -148,7 +148,7 @@ bool SchemaContext::isPathValid(Path path) const {
   void* schema =
       llly_path_data2schema(ctx, const_cast<char*>(path.str().c_str()));
 
-    auto result = schema != nullptr;
+  auto result = schema != nullptr;
   free(schema);
   return result;
 }

@@ -82,13 +82,14 @@ dynamic DatastoreTransaction::appendAllParents(
 
 void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   checkIfCommitted();
-  if (!path.empty()) {
-      MLOG(MDEBUG) << "withoutParents: " << toPrettyJson(aDynamic);
-
-      dynamic withParents = appendAllParents(path, aDynamic);
-    MLOG(MDEBUG) << "withParents: " << toPrettyJson(withParents);
+  if (!path.empty() && path.str() != path.PATH_SEPARATOR) {
+    dynamic withParents = appendAllParents(path, aDynamic);
     lllyd_node* pNode = dynamic2lydNode(withParents);
-    lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
+    if(root != nullptr){ //there exists something to merge to
+        lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
+    } else {
+        root = pNode;
+    }
   } else {
     if (root != nullptr) {
       lllyd_free(root);
