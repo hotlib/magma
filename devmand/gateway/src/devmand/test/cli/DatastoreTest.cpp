@@ -405,6 +405,12 @@ TEST_F(DatastoreTest, readSubElementYdk) {
   EXPECT_EQ(configDescription, "this is a config description");
 }
 
+TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
+  Datastore datastore(Datastore::operational());
+  const unique_ptr<DatastoreTransaction>& trans1 = datastore.newTx();
+  EXPECT_THROW(datastore.newBindingTx(), DatastoreException);
+}
+
 } // namespace cli
 } // namespace test
 } // namespace devmand
