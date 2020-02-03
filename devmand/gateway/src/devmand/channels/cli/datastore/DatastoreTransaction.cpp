@@ -121,8 +121,7 @@ void DatastoreTransaction::abort() {
   }
 
   hasCommited.store(true);
-  datastoreState->transactionUnderway.store(
-      false); // TODO what if transaction goes out of scope?
+  datastoreState->transactionUnderway.store(false);
 }
 
 void DatastoreTransaction::validateBeforeCommit() {
@@ -224,8 +223,7 @@ DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited && root != nullptr) {
     lllyd_free(root);
   }
-  // datastoreState->transactionUnderway.store(false); //TODO what if
-  // transaction goes out of scope?
+  datastoreState->transactionUnderway.store(false);
 }
 
 void DatastoreTransaction::checkIfCommitted() {
@@ -294,11 +292,18 @@ dynamic DatastoreTransaction::read(Path path) {
 
   llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.str().c_str()));
 
-  if (pSet == nullptr || pSet->number == 0) {
+  if (pSet == nullptr) {
+    return nullptr;
+  }
+
+  if (pSet->number == 0) {
+    llly_set_free(pSet);
     return nullptr;
   }
 
   if (pSet->number > 1) {
+    llly_set_free(pSet);
+
     DatastoreException ex(
         "Too many results from path: " + path.str() +
         " , query must target a unique element");
@@ -307,6 +312,7 @@ dynamic DatastoreTransaction::read(Path path) {
   }
 
   const string& json = toJson(pSet->set.d[0]);
+  llly_set_free(pSet);
   return parseJson(json);
 }
 
@@ -344,9 +350,9 @@ bool DatastoreTransaction::isValid() {
 int DatastoreTransaction::datastoreTypeToLydOption() {
   switch (datastoreState->type) {
     case operational:
-      return LLLYD_OPT_DATA | LLLYD_OPT_DATA_NO_YANGLIB;
+      return LLLYD_OPT_GET;
     case config:
-      return LLLYD_OPT_CONFIG;
+      return LLLYD_OPT_GETCONFIG;
   }
 
   return 0;

@@ -30,7 +30,7 @@ class Datastore {
  private:
   shared_ptr<DatastoreState> datastoreState;
   shared_ptr<BindingCodec> bindingCodec;
-  shared_ptr<SchemaContext> schemaContext;
+  SchemaContext & schemaContext;
   void checkIfTransactionRunning();
   void setTransactionRunning();
 
@@ -38,7 +38,7 @@ class Datastore {
   static DatastoreType operational();
   static DatastoreType config();
 
-  Datastore(DatastoreType _type);
+  Datastore(DatastoreType _type, SchemaContext & _schemaContext);
 
   unique_ptr<DatastoreTransaction>
   newTx(); // operations on transaction are NOT thread-safe

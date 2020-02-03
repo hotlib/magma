@@ -202,4 +202,8 @@ bool SchemaContext::operator==(const SchemaContext& rhs) const {
 bool SchemaContext::operator!=(const SchemaContext& rhs) const {
   return !(rhs == *this);
 }
+
+    llly_ctx *SchemaContext::getLyContext() const {
+        return ctx;
+    }
 } // namespace devmand::devices::cli

@@ -7,23 +7,22 @@
 
 #include <devmand/channels/cli/datastore/Datastore.h>
 #include <devmand/devices/cli/schema/Model.h>
+#include <devmand/channels/cli/engine/Engine.h>
 
 namespace devmand::channels::cli::datastore {
 using devmand::channels::cli::datastore::DatastoreException;
 using devmand::devices::cli::SchemaContext;
 using std::make_unique;
-Datastore::Datastore(DatastoreType type) {
+using devmand::channels::cli::Engine;
+
+Datastore::Datastore(DatastoreType type, SchemaContext & _schemaContext) : schemaContext(_schemaContext) {
   Model model = Model::OPENCONFIG_0_1_6;
-  schemaContext = std::make_shared<SchemaContext>(model);
   ydk::path::Repository repo(
       model.getDir(), ydk::path::ModelCachingOption::COMMON);
   bindingCodec =
-      std::make_shared<BindingCodec>(repo, model.getDir(), *schemaContext);
+      std::make_shared<BindingCodec>(repo, model.getDir(), schemaContext);
 
-  llly_ctx* pLyCtx = llly_ctx_new(model.getDir().c_str(), 0);
-  llly_ctx_load_module(pLyCtx, "iana-if-type", NULL);
-  llly_ctx_load_module(pLyCtx, "openconfig-interfaces", NULL);
-  // schemaCtx.loadModules(pLyCtx, model); //TODO not working
+  llly_ctx* pLyCtx = schemaContext.getLyContext();
   datastoreState = make_shared<DatastoreState>(pLyCtx, type);
 }
 

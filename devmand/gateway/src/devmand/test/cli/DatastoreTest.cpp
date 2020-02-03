@@ -16,6 +16,7 @@
 #include <devmand/devices/cli/schema/Model.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <devmand/devices/cli/schema/SchemaContext.h>
+#include <devmand/channels/cli/engine/Engine.h>
 #include <devmand/test/cli/utils/Log.h>
 #include <devmand/test/cli/utils/SampleJsons.h>
 #include <folly/json.h>
@@ -54,8 +55,16 @@ using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
 
 class DatastoreTest : public ::testing::Test {
  protected:
-  shared_ptr<ModelRegistry> mregsh;
-  void SetUp() override {
+    unique_ptr<channels::cli::Engine> cliEngine;
+    SchemaContext & schemaContext;
+
+public:
+    DatastoreTest() : cliEngine(
+            std::make_unique<channels::cli::Engine>()),
+            schemaContext(cliEngine->getModelRegistry()->getSchemaContext(Model::OPENCONFIG_0_1_6)) {}
+
+protected:
+    void SetUp() override {
     // TODO move somewhere global
     //     set extensions and user_types for non-YDK libyang
     setenv(
@@ -67,7 +76,6 @@ class DatastoreTest : public ::testing::Test {
         LIBYANG_USER_TYPES_PLUGINS_DIR,
         false);
     devmand::test::utils::log::initLog();
-    mregsh = make_shared<ModelRegistry>();
   }
 };
 
@@ -92,7 +100,7 @@ static shared_ptr<OpenconfigInterfaces> ydkInterfaces() {
 }
 
 TEST_F(DatastoreTest, commitWorks) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -110,14 +118,14 @@ TEST_F(DatastoreTest, commitWorks) {
 }
 
 TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermitted) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   EXPECT_THROW(datastore.newTx(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, abortDisablesRunningTransaction) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->abort();
@@ -133,7 +141,7 @@ TEST_F(DatastoreTest, abortDisablesRunningTransaction) {
 }
 
 TEST_F(DatastoreTest, commitDisablesRunningTransaction) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -151,7 +159,7 @@ TEST_F(DatastoreTest, commitDisablesRunningTransaction) {
 }
 
 TEST_F(DatastoreTest, commitEndsRunningTransaction) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -161,14 +169,14 @@ TEST_F(DatastoreTest, commitEndsRunningTransaction) {
 }
 
 TEST_F(DatastoreTest, dontAllowEmptyCommit) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   EXPECT_THROW(transaction->commit(), DatastoreException);
 }
 
 TEST_F(DatastoreTest, abortEndsRunningTransaction) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->abort();
@@ -176,7 +184,7 @@ TEST_F(DatastoreTest, abortEndsRunningTransaction) {
 }
 
 TEST_F(DatastoreTest, deleteSubtrees) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -190,7 +198,7 @@ TEST_F(DatastoreTest, deleteSubtrees) {
 }
 
 TEST_F(DatastoreTest, writeNewInterface) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -206,8 +214,13 @@ TEST_F(DatastoreTest, writeNewInterface) {
       "0/85", data["openconfig-interfaces:interface"][0]["name"].getString());
 }
 
-TEST_F(DatastoreTest, identifyInvalidTree) {
-  Datastore datastore(Datastore::operational());
+// this test is disabled due to lowered threshold for validation and it would not detect
+// a missing config section in interface. The validation threshold is lowered because
+// each device supports a different subset of YANG models (one device has BGP activated and another does not,
+// the device where BGP is not activated would have "missing" mandatory BGP leafs and the datastore
+// would report its data as invalid)
+TEST_F(DatastoreTest, DISABLED_identifyInvalidTree) {
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -219,7 +232,7 @@ TEST_F(DatastoreTest, identifyInvalidTree) {
 }
 
 TEST_F(DatastoreTest, mergeChangesInterface) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -237,7 +250,7 @@ TEST_F(DatastoreTest, mergeChangesInterface) {
 }
 
 TEST_F(DatastoreTest, mergeErasedValueOriginalValueUnchangedInterface) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -250,7 +263,7 @@ TEST_F(DatastoreTest, mergeErasedValueOriginalValueUnchangedInterface) {
 }
 
 TEST_F(DatastoreTest, changeLeaf) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -265,7 +278,7 @@ TEST_F(DatastoreTest, changeLeaf) {
 }
 
 TEST_F(DatastoreTest, changeLeafDiff) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -292,7 +305,7 @@ TEST_F(DatastoreTest, changeLeafDiff) {
 }
 
 TEST_F(DatastoreTest, deleteSubtreeDiff) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -313,7 +326,7 @@ TEST_F(DatastoreTest, deleteSubtreeDiff) {
 }
 
 TEST_F(DatastoreTest, diffAfterWrite) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite("", parseJson(openconfigInterfacesInterfaces));
@@ -341,7 +354,7 @@ TEST_F(DatastoreTest, diffAfterWrite) {
 }
 
 TEST_F(DatastoreTest, diffAfterMerge) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
   transaction->overwrite(Path(""), parseJson(openconfigInterfacesInterfaces));
@@ -367,7 +380,7 @@ TEST_F(DatastoreTest, diffAfterMerge) {
 
 TEST_F(DatastoreTest, writeAndReadYdk) {
   shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   const unique_ptr<BindingAwareDatastoreTransaction>& transaction =
       datastore.newBindingTx();
   Path interfaces("/openconfig-interfaces:interfaces");
@@ -389,7 +402,7 @@ TEST_F(DatastoreTest, writeAndReadYdk) {
 
 TEST_F(DatastoreTest, readSubElementYdk) {
   shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   const unique_ptr<BindingAwareDatastoreTransaction>& transaction =
       datastore.newBindingTx();
   Path interfaces("/openconfig-interfaces:interfaces");
@@ -406,7 +419,7 @@ TEST_F(DatastoreTest, readSubElementYdk) {
 }
 
 TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
-  Datastore datastore(Datastore::operational());
+  Datastore datastore(Datastore::operational(), schemaContext);
   const unique_ptr<DatastoreTransaction>& trans1 = datastore.newTx();
   EXPECT_THROW(datastore.newBindingTx(), DatastoreException);
 }

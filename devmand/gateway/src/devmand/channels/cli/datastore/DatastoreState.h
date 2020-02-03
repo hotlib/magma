@@ -25,10 +25,6 @@ struct DatastoreState {
     if (root != nullptr) {
       lllyd_free(root);
     }
-    if (ctx != nullptr) {
-      llly_ctx_destroy(ctx, nullptr); // TODO shared context for everyone or
-                                      // each datastore has a private one???
-    }
   }
 
  public:
