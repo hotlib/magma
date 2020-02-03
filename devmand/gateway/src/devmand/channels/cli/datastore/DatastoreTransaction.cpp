@@ -85,10 +85,10 @@ void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   if (!path.empty() && path.str() != path.PATH_SEPARATOR) {
     dynamic withParents = appendAllParents(path, aDynamic);
     lllyd_node* pNode = dynamic2lydNode(withParents);
-    if(root != nullptr){ //there exists something to merge to
-        lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
+    if (root != nullptr) { // there exists something to merge to
+      lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
     } else {
-        root = pNode;
+      root = pNode;
     }
   } else {
     if (root != nullptr) {

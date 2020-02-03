@@ -30,10 +30,10 @@ namespace test {
 namespace cli {
 
 using devmand::channels::cli::datastore::BindingAwareDatastoreTransaction;
-using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::Datastore;
 using devmand::channels::cli::datastore::DatastoreDiff;
 using devmand::channels::cli::datastore::DatastoreException;
+using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
 using devmand::test::utils::cli::interface02state;
@@ -49,6 +49,7 @@ using std::to_string;
 using std::unique_ptr;
 using OpenconfigInterfaces = openconfig::openconfig_interfaces::Interfaces;
 using OpenconfigInterface = OpenconfigInterfaces::Interface;
+using OpenconfigConfig = OpenconfigInterface::Config;
 using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
 
 class DatastoreTest : public ::testing::Test {
@@ -70,12 +71,14 @@ class DatastoreTest : public ::testing::Test {
   }
 };
 
-static shared_ptr<OpenconfigInterface> interfaceCpp() {
+static shared_ptr<OpenconfigInterfaces> ydkInterfaces() {
+  auto interfaces = make_shared<OpenconfigInterfaces>();
   auto interface = make_shared<OpenconfigInterface>();
   interface->name = "0/2";
   interface->config->name = "0/2";
   interface->config->enabled = true;
   interface->config->mtu = 1500;
+  interface->config->description = "this is a config description";
   interface->config->type = ietf::iana_if_type::EthernetCsmacd();
   interface->state->admin_status = "UP";
   interface->state->description = "dummy state";
@@ -84,8 +87,8 @@ static shared_ptr<OpenconfigInterface> interfaceCpp() {
   interface->state->oper_status = "DOWN";
   interface->state->name = "0/2";
   interface->state->type = ietf::iana_if_type::EthernetCsmacd();
-
-    return interface;
+  interfaces->interface.append(interface);
+  return interfaces;
 }
 
 TEST_F(DatastoreTest, commitWorks) {
@@ -362,29 +365,44 @@ TEST_F(DatastoreTest, diffAfterMerge) {
   transaction->abort();
 }
 
-TEST_F(DatastoreTest, testcreate1) {
-  Model model = Model::OPENCONFIG_0_1_6;
-  SchemaContext schemaCtx(model);
-  schemaCtx.isList("/openconfig-interfaces:interfaces/interface/name");
-  shared_ptr<OpenconfigInterface> openconfigInterface = interfaceCpp();
+TEST_F(DatastoreTest, writeAndReadYdk) {
+  shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
   Datastore datastore(Datastore::operational());
   const unique_ptr<BindingAwareDatastoreTransaction>& transaction =
       datastore.newBindingTx();
-  Path interface02("/openconfig-interfaces:interfaces/interface[name='0/2']");
+  Path interfaces("/openconfig-interfaces:interfaces");
 
+  transaction->overwrite(interfaces, openconfigInterfaces);
 
-        transaction->overwrite("/openconfig-interfaces:interfaces/interface[name='0/2']", openconfigInterface);
+  const shared_ptr<OpenconfigInterfaces>& readIfaces =
+      transaction->read<OpenconfigInterfaces>(interfaces);
+  transaction->commit();
 
-        transaction->read<OpenconfigInterface>(interface02);
-        transaction->commit();
-  //MLOG(MDEBUG) << openconfigInterfacesInterfaces;
-//  transaction->merge(
-//      "/openconfig-interfaces:interfaces/interface[name='0/2']",
-//      openconfigInterface);
-  //  transaction->commit();
-  //        ydk::path::Repository repo(model.getDir(),
-  //        ydk::path::ModelCachingOption::COMMON); BindingCodec
-  //        bindingCodec(repo, model.getDir(), schemaCtx); Repository repo;
+  EXPECT_EQ(readIfaces->interface.keys().size(), 1);
+  shared_ptr<OpenconfigInterface> iface =
+      std::static_pointer_cast<OpenconfigInterface>(readIfaces->interface[0]);
+  string name = iface->name;
+  EXPECT_EQ(name, "0/2");
+  string description = iface->state->description;
+  EXPECT_EQ(description, "dummy state");
+}
+
+TEST_F(DatastoreTest, readSubElementYdk) {
+  shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
+  Datastore datastore(Datastore::operational());
+  const unique_ptr<BindingAwareDatastoreTransaction>& transaction =
+      datastore.newBindingTx();
+  Path interfaces("/openconfig-interfaces:interfaces");
+
+  transaction->overwrite(interfaces, openconfigInterfaces);
+
+  const shared_ptr<OpenconfigConfig>& config =
+      transaction->read<OpenconfigConfig>(
+          "/openconfig-interfaces:interfaces/interface[name='0/2']/config");
+  transaction->commit();
+
+  string configDescription = config->description;
+  EXPECT_EQ(configDescription, "this is a config description");
 }
 
 } // namespace cli

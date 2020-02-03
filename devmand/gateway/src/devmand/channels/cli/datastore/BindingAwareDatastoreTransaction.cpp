@@ -47,7 +47,7 @@ void BindingAwareDatastoreTransaction::abort() {
   datastoreTransaction.abort();
 }
 
-    void BindingAwareDatastoreTransaction::print() {
-        datastoreTransaction.print();
-    }
+void BindingAwareDatastoreTransaction::print() {
+  datastoreTransaction.print();
+}
 } // namespace devmand::channels::cli::datastore
