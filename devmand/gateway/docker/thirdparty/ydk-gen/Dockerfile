@@ -15,7 +15,7 @@ RUN git submodule update --init
 RUN pip install -r $PKG_REPO_DIR/requirements.txt
 
 # Generate core cpp
-RUN $PKG_REPO_DIR/generate.py -i --core --cpp
+RUN $PKG_REPO_DIR/generate.py -i --core --cpp --output-directory=$PKG_INSTALL_DIR
 # TODO copy to appropriate place $PKG_BUILD_DIR/ydk ?
 
 # Generate openconfig 2.4.3 
@@ -60,7 +60,7 @@ RUN echo '\
   } \
 } \
 ' > $PKG_REPO_DIR/profiles/bundles/openconfig_pure_2_4_3.json
-RUN $PKG_REPO_DIR/generate.py -is -v --bundle $PKG_REPO_DIR/profiles/bundles/openconfig_pure_2_4_3.json --cpp
+RUN $PKG_REPO_DIR/generate.py -i -v --bundle $PKG_REPO_DIR/profiles/bundles/openconfig_pure_2_4_3.json --cpp --output-directory=$PKG_INSTALL_DIR
 # TODO copy to appropriate place $PKG_BUILD_DIR/ydk ?
 
 WORKDIR $PKG_BUILD_DIR/ydk
