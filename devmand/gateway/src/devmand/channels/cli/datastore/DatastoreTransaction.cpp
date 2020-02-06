@@ -216,6 +216,32 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   return diffs;
 }
 
+map<Path, DatastoreDiff> DatastoreTransaction::diff(vector<DiffPath> paths) {
+  const map<Path, DatastoreDiff>& diffs = diff();
+
+  for (const auto& diff : diffs) {
+    const DiffPath& parent = pickClosestPath(diff.first, paths);
+    if (diff.first.isChildOf(parent.path)) {
+      if (parent.asterix) {
+      }
+    }
+  }
+}
+
+DiffPath DatastoreTransaction::pickClosestPath(
+    Path path,
+    vector<DiffPath> paths) {
+  int max = 0;
+  DiffPath result;
+  for (const auto& p : paths) {
+    if (path.segmentDistance(p.path) > max) {
+      result = p;
+      max = path.segmentDistance(p.path);
+    }
+  }
+  return result;
+}
+
 DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited && root != nullptr) {
     lllyd_free(root);
@@ -357,4 +383,5 @@ int DatastoreTransaction::datastoreTypeToLydOption() {
   }
   return 0;
 }
+
 } // namespace devmand::channels::cli::datastore

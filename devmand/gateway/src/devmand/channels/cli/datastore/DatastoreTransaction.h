@@ -36,8 +36,14 @@ using folly::dynamic;
 using folly::parseJson;
 using std::atomic_bool;
 using std::runtime_error;
+using std::vector;
 
 namespace devmand::channels::cli::datastore {
+
+struct DiffPath {
+  Path path;
+  bool asterix;
+}
 
 class DatastoreTransaction {
  private:
@@ -58,6 +64,7 @@ class DatastoreTransaction {
   void checkIfCommitted();
   string toJson(lllyd_node* initial);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
+  DiffPath pickClosestPath(Path, vector<DiffPath> paths);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
@@ -65,6 +72,7 @@ class DatastoreTransaction {
   dynamic read(Path path);
   void print();
   map<Path, DatastoreDiff> diff();
+  map<Path, DatastoreDiff> void diff(vector<DiffPath> paths);
   bool isValid();
   bool delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);

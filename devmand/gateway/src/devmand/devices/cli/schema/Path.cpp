@@ -304,6 +304,19 @@ string Path::str() const {
   return path;
 }
 
+int Path::segmentDistance(Path other) const {
+  const vector<string>& otherSegments = other.getSegments();
+  const vector<string>& segments = getSegments();
+  int j = 0;
+  for (; j < otherSegments.size() && j < segments.size(); ++j) {
+    if (otherSegments[j] != other[j]) {
+      return j;
+    }
+  }
+
+  return j;
+}
+
 } // namespace cli
 } // namespace devices
 } // namespace devmand
