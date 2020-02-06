@@ -38,6 +38,7 @@ using devmand::channels::cli::datastore::Datastore;
 using devmand::channels::cli::datastore::DatastoreDiff;
 using devmand::channels::cli::datastore::DatastoreException;
 using devmand::channels::cli::datastore::DatastoreTransaction;
+using devmand::channels::cli::datastore::DiffPath;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
 using devmand::test::utils::cli::interface02state;
@@ -432,6 +433,33 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
   const unique_ptr<DatastoreTransaction>& trans1 = datastore->newTx();
   EXPECT_THROW(bindingAwareDatastore.newBindingTx(), DatastoreException);
 }
+
+        TEST_F(DatastoreTest, diffTest2) {
+            shared_ptr<Datastore> datastore =
+                    std::make_shared<Datastore>(Datastore::operational(), schemaContext);
+            const unique_ptr <DatastoreTransaction> &transaction = datastore->newTx();
+
+//            map<Path, DatastoreDiff> diffs;
+//            diffs.emplace(
+//                    std::piecewise_construct,
+//                    std::forward_as_tuple("/aa/bb/cc"),
+//                    std::forward_as_tuple(folly::dynamic::object(), folly::dynamic::object(), DatastoreDiffType::update));
+            transaction->overwrite(Path("/"), parseJson(openconfigInterfacesInterfaces));
+
+            transaction->commit();
+            const unique_ptr <DatastoreTransaction> &transaction2 = datastore->newTx();
+            dynamic errors = transaction2->read(interface02TopPath + "/state/counters");
+            errors["openconfig-interfaces:counters"]["out-errors"] = "777";
+            errors["openconfig-interfaces:counters"]["out-discards"] = "17";
+            transaction2->merge(interface02TopPath + "/state/counters", errors);
+            vector<DiffPath> paths;
+            //Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
+            Path outDiscards(interfaceCounters);
+            paths.emplace_back(outDiscards, false, false);
+            transaction2->diff(paths);
+        }
+
+
 
 } // namespace cli
 } // namespace test

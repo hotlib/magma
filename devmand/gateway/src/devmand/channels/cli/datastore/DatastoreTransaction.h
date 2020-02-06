@@ -43,7 +43,14 @@ namespace devmand::channels::cli::datastore {
 struct DiffPath {
   Path path;
   bool asterix;
-}
+  bool empty = false;
+
+  DiffPath() : path("/"), asterix(false), empty(true){
+
+  }
+
+  DiffPath(const Path _path, bool _asterix, bool _empty) : path(_path), asterix(_asterix), empty(_empty) {}
+};
 
 class DatastoreTransaction {
  private:
@@ -72,7 +79,7 @@ class DatastoreTransaction {
   dynamic read(Path path);
   void print();
   map<Path, DatastoreDiff> diff();
-  map<Path, DatastoreDiff> void diff(vector<DiffPath> paths);
+  map<Path, DatastoreDiff> diff(vector<DiffPath> paths);
   bool isValid();
   bool delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);

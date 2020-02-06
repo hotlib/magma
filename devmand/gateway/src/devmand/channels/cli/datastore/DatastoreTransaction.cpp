@@ -216,25 +216,33 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   return diffs;
 }
 
-map<Path, DatastoreDiff> DatastoreTransaction::diff(vector<DiffPath> paths) {
-  const map<Path, DatastoreDiff>& diffs = diff();
+map<Path, DatastoreDiff> DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
+ const map<Path, DatastoreDiff>& diffs = diff();
 
   for (const auto& diff : diffs) {
-    const DiffPath& parent = pickClosestPath(diff.first, paths);
-    if (diff.first.isChildOf(parent.path)) {
-      if (parent.asterix) {
-      }
+    const DiffPath& registeredParent = pickClosestPath(diff.first, registeredPaths);
+    if (not registeredParent.empty) {
+        if(registeredParent.asterix || registeredParent.path.getSegments().size() == diff.first.getSegments().size()) {
+            MLOG(MINFO) << "handling event!:  " << registeredParent.path.str() << " changed path: " << diff.first.str();
+        } else {
+            MLOG(MINFO) << "Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
+        }
+    } else {
+        MLOG(MINFO) << "Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
     }
   }
+
+  return {};
 }
 
 DiffPath DatastoreTransaction::pickClosestPath(
     Path path,
     vector<DiffPath> paths) {
-  int max = 0;
+  unsigned int max = 0;
   DiffPath result;
+    result.empty = true;
   for (const auto& p : paths) {
-    if (path.segmentDistance(p.path) > max) {
+    if (path.segmentDistance(p.path) > max && path.isChildOf(p.path)) {
       result = p;
       max = path.segmentDistance(p.path);
     }

@@ -49,7 +49,7 @@ class Path {
   const Path addKeysToSegment(string segment, Keys keys) const;
   Keys getKeys() const;
   Keys getKeysFromSegment(string segment) const;
-  int segmentDistance(Path path) const;
+  unsigned int segmentDistance(Path path) const;
 
   static const Path joinSegments(vector<string> segments);
   static const string serializeKeys(Keys keys);
