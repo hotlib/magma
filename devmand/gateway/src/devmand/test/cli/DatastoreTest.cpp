@@ -370,7 +370,6 @@ TEST_F(DatastoreTest, diffAfterMerge) {
 
   const map<Path, DatastoreDiff>& map = transaction->diff();
   Path diffKey(operStatus);
-  MLOG(MINFO) << "FIRST: " << map.at(diffKey).before;
   EXPECT_EQ(
       map.at(diffKey).before["openconfig-interfaces:oper-status"], "DOWN");
   EXPECT_EQ(map.at(diffKey).after["openconfig-interfaces:oper-status"], "UP");
@@ -434,7 +433,44 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
   EXPECT_THROW(bindingAwareDatastore.newBindingTx(), DatastoreException);
 }
 
-        TEST_F(DatastoreTest, diffTest2) {
+
+        TEST_F(DatastoreTest, diffMultipOperations) {
+            Datastore datastore(Datastore::operational(), schemaContext);
+            unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+                    datastore.newTx();
+            transaction->overwrite(Path("/"), parseJson(openconfigInterfacesInterfaces));
+            transaction->delete_(interface02TopPath + "/state");
+            //transaction->delete_(interface02TopPath + "/config/enabled");
+            transaction->commit();
+            transaction = datastore.newTx();
+            dynamic interface02 = transaction->read(interface02TopPath ); //+ "/state/counters"
+//            MLOG(MINFO) << "this: " << toPrettyJson(interface02) ; //["out-errors"] = "777";
+            //MLOG(MINFO) << "this: " << toPrettyJson() ; //["out-errors"] = "777";
+            interface02["openconfig-interfaces:interface"][0]["state"] = folly::dynamic::object();
+            interface02["openconfig-interfaces:interface"][0]["state"]["counters"] = folly::dynamic::object();
+            interface02["openconfig-interfaces:interface"][0]["state"]["counters"]["in-errors"] = 7;
+            interface02["openconfig-interfaces:interface"][0]["state"]["admin-status"] = "DOWN";
+            interface02["openconfig-interfaces:interface"][0]["config"]["mtu"] = 1400;
+            interface02["openconfig-interfaces:interface"][0]["config"]["enabled"] = false;
+            transaction->overwrite(interface02TopPath, interface02);
+            const map<Path, DatastoreDiff>& map = transaction->diff();
+//            Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
+//            Path outErrors(interfaceCounters + "/openconfig-interfaces:out-errors");
+            //EXPECT_EQ(map.size(), 4);
+            for (const auto &item : map) {
+                MLOG(MINFO) << "path: " << item.first.str() << " oper type: " << item.second.type << " after: " << toPrettyJson(item.second.after);
+            }
+//            EXPECT_EQ(map.at(outDiscards).type, DatastoreDiffType::deleted);
+//            EXPECT_EQ(map.at(outErrors).type, DatastoreDiffType::update);
+        }
+
+
+
+
+
+
+
+        TEST_F(DatastoreTest, deleteAndChangeDiff2) {
             shared_ptr<Datastore> datastore =
                     std::make_shared<Datastore>(Datastore::operational(), schemaContext);
             const unique_ptr <DatastoreTransaction> &transaction = datastore->newTx();

@@ -222,13 +222,13 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff(vector<DiffPath> registeredP
   for (const auto& diff : diffs) {
     const DiffPath& registeredParent = pickClosestPath(diff.first, registeredPaths);
     if (not registeredParent.empty) {
-        if(registeredParent.asterix || registeredParent.path.getSegments().size() == diff.first.getSegments().size()) {
+        if(registeredParent.asterix || diff.first.getSegments().size() == (registeredParent.path.getSegments().size() + 1)) {
             MLOG(MINFO) << "handling event!:  " << registeredParent.path.str() << " changed path: " << diff.first.str();
         } else {
-            MLOG(MINFO) << "Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
+            MLOG(MINFO) << "seg diff: " << diff.first.getSegments().size() << "seg reg: " << registeredParent.path.getSegments().size() << "Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
         }
     } else {
-        MLOG(MINFO) << "Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
+        MLOG(MINFO) << "Totally Unhandled event for " << registeredParent.path.str() << " changed path: " << diff.first.str();
     }
   }
 
