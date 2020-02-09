@@ -74,12 +74,16 @@ class DatastoreTransaction {
   DiffPath pickClosestPath(Path, vector<DiffPath> paths);
 
  public:
-  DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
+    map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
+    void splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>  & v);
+    std::multimap<Path, DatastoreDiff> fineGrainedDiff(vector<DiffPath> registeredPaths);
+
+    DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
   dynamic read(Path path);
   void print();
   map<Path, DatastoreDiff> diff();
-  map<Path, DatastoreDiff> diff(vector<DiffPath> paths);
+  Path getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
   bool isValid();
   bool delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);

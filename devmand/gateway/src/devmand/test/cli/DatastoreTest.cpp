@@ -457,9 +457,20 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
 //            Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
 //            Path outErrors(interfaceCounters + "/openconfig-interfaces:out-errors");
             //EXPECT_EQ(map.size(), 4);
-            for (const auto &item : map) {
-                MLOG(MINFO) << "path: " << item.first.str() << " oper type: " << item.second.type << " after: " << toPrettyJson(item.second.after);
+            vector<DiffPath> paths;
+            //Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
+            Path outDiscards("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:state");
+            paths.emplace_back(outDiscards, false, false);
+
+            const std::multimap<Path, DatastoreDiff> &multimap = transaction->fineGrainedDiff(paths);
+            for (const auto &multi : multimap) {
+                MLOG(MINFO) << "key: " << multi.first << " handles: " << multi.second.path << " (type: " << multi.second.type << ")";
             }
+
+//            for (const auto &item : map) {
+//                    transaction->splitDiff(item.second);
+//                //MLOG(MINFO) << "path: " << item.first.str() << " oper type: " << item.second.type << " after: " << toPrettyJson(item.second.after);
+//            }
 //            EXPECT_EQ(map.at(outDiscards).type, DatastoreDiffType::deleted);
 //            EXPECT_EQ(map.at(outErrors).type, DatastoreDiffType::update);
         }
@@ -492,7 +503,10 @@ TEST_F(DatastoreTest, twoTransactionsAtTheSameTimeNotPermited) {
             //Path outDiscards(interfaceCounters + "/openconfig-interfaces:out-discards");
             Path outDiscards(interfaceCounters);
             paths.emplace_back(outDiscards, false, false);
-            transaction2->diff(paths);
+            const std::multimap<Path, DatastoreDiff> &multimap = transaction2->fineGrainedDiff(paths);
+            for (const auto &multi : multimap) {
+                MLOG(MINFO) << "key: " << multi.first << " handles: " << multi.second.path;
+            }
         }
 
 
