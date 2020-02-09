@@ -15,6 +15,8 @@ namespace devmand::channels::cli::datastore {
 
     using devmand::channels::cli::datastore::DatastoreException;
     using std::map;
+    using folly::make_optional;
+    using folly::none;
 
     bool DatastoreTransaction::delete_(Path p) {
         checkIfCommitted();
@@ -216,27 +218,26 @@ namespace devmand::channels::cli::datastore {
         return diffs;
     }
 
-    Path DatastoreTransaction::getRegisteredPath(vector<DiffPath> registeredPaths, Path path) {
+    Optional<Path> DatastoreTransaction::getRegisteredPath(vector<DiffPath> registeredPaths, Path path) {
 
         const DiffPath &registeredParent = pickClosestPath(path, registeredPaths);
         if (not registeredParent.empty) {
             if (registeredParent.asterix ||
                 path.getSegments().size() == (registeredParent.path.getSegments().size() + 1)
                 || path.getSegments().size() == registeredParent.path.getSegments().size()) {
-                return registeredParent.path;
-//                    MLOG(MINFO)
-//                    << "handling event!:  " << registeredParent.path.str() << " changed path: " << diff.first.str();
+                return make_optional(registeredParent.path);
             } else {
                 MLOG(MINFO) << "seg diff: " << path.getSegments().size() << " seg reg: "
-                            << registeredParent.path.getSegments().size() << "Unhandled event for "
+                            << registeredParent.path.getSegments().size() << " Unhandled event for "
                             << registeredParent.path.str() << " changed path: " << path.str();
+
             }
         } else {
             MLOG(MINFO) << "Totally Unhandled event for " << registeredParent.path.str() << " changed path: "
                         << path.str();
         }
 
-        return Path("/empty");
+        return none;
     }
 
     DiffPath DatastoreTransaction::pickClosestPath(
@@ -400,7 +401,10 @@ namespace devmand::channels::cli::datastore {
         for (const auto &item : input.items()) {
             //MLOG(MINFO) << item.first.c_str();
             if (item.second.isArray() || item.second.isObject()) {
-                string currentPath = p.str() + "/" + item.first.c_str();
+                string currentPath = p.str();
+                if(p.getLastSegment() != item.first.asString()){ //TODO skip last overlapping segment name
+                    currentPath = p.str() + "/" + item.first.c_str();
+                }
                 result.emplace_back(std::make_pair(currentPath, input));
 //            MLOG(MINFO) << "size: " << result.size() <<  " idem spracovat " << item.first.c_str() << " path: " << currentPath;
                 splitToMany(Path(currentPath), item.second, result);
@@ -409,18 +413,17 @@ namespace devmand::channels::cli::datastore {
 
     }
 
-    std::multimap<Path, DatastoreDiff> DatastoreTransaction::fineGrainedDiff(vector<DiffPath> registeredPaths) {
-        std::multimap<Path, DatastoreDiff> result;
+    multimap<Path, DatastoreDiff> DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
+        multimap<Path, DatastoreDiff> result;
         const map<Path, DatastoreDiff> &diffs = diff();
         for (const auto &diffItem : diffs) { //take libyang diffs
             const map<Path, DatastoreDiff> &smallerDiffs = splitDiff(diffItem.second); //split them to smaller ones
             for (const auto &smallerDiffsItem : smallerDiffs) { //merge them
-                Path registeredPath = getRegisteredPath(registeredPaths, smallerDiffsItem.first);
-                if (registeredPath.str() == "/empty") {
-                    MLOG(MINFO) << "/empty path";
-                    //TODO handle
+                Optional<Path> registeredPath = getRegisteredPath(registeredPaths, smallerDiffsItem.first);
+                if (registeredPath) {
+                    result.emplace(std::make_pair(registeredPath.value(), smallerDiffsItem.second));
                 } else {
-                    result.emplace(std::make_pair(registeredPath, smallerDiffsItem.second));
+                    //TODO no registered paths for occured event
                 }
             }
         }

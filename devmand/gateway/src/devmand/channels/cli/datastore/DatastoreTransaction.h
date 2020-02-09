@@ -37,6 +37,8 @@ using folly::parseJson;
 using std::atomic_bool;
 using std::runtime_error;
 using std::vector;
+using folly::Optional;
+using std::multimap;
 
 namespace devmand::channels::cli::datastore {
 
@@ -72,18 +74,18 @@ class DatastoreTransaction {
   string toJson(lllyd_node* initial);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
   DiffPath pickClosestPath(Path, vector<DiffPath> paths);
+  map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
+  void splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>  & v);
+  Optional<Path> getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
 
- public:
-    map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
-    void splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>  & v);
-    std::multimap<Path, DatastoreDiff> fineGrainedDiff(vector<DiffPath> registeredPaths);
+public:
 
     DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
   dynamic read(Path path);
   void print();
   map<Path, DatastoreDiff> diff();
-  Path getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
+  multimap<Path, DatastoreDiff> diff(vector<DiffPath> registeredPaths);
   bool isValid();
   bool delete_(Path path);
   void merge(Path path, const dynamic& aDynamic);
