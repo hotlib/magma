@@ -11,6 +11,10 @@
 namespace devmand::test::utils::cli {
 using devmand::devices::cli::Path;
 
+string statePathWithKey = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state";
+string statePath = "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state";
+string counterPath = statePath + "/counters";
+
 string openconfigInterfacesInterfaces =
     "{\n"
     "  \"openconfig-interfaces:interfaces\": {\n"
