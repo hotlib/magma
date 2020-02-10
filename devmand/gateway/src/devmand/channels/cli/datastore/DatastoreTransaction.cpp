@@ -220,8 +220,9 @@ namespace devmand::channels::cli::datastore {
 
     Optional<Path> DatastoreTransaction::getRegisteredPath(vector<DiffPath> registeredPaths, Path path) {
 
-        const DiffPath &registeredParent = pickClosestPath(path, registeredPaths);
-        if (not registeredParent.empty) {
+        const Optional<DiffPath> &registeredParentOptional = pickClosestPath(path, registeredPaths);
+        if (registeredParentOptional) {
+            DiffPath registeredParent = registeredParentOptional.value();
             if (registeredParent.asterix ||
                 path.getSegments().size() == (registeredParent.path.getSegments().size() + 1)
                 || path.getSegments().size() == registeredParent.path.getSegments().size()) {
@@ -233,26 +234,27 @@ namespace devmand::channels::cli::datastore {
 
             }
         } else {
-            MLOG(MINFO) << "Totally Unhandled event for " << registeredParent.path.str() << " changed path: "
-                        << path.str();
+            MLOG(MINFO) << "Totally Unhandled event for changed path: " << path.str();
         }
 
         return none;
     }
 
-    DiffPath DatastoreTransaction::pickClosestPath(
+    Optional<DiffPath> DatastoreTransaction::pickClosestPath(
             Path path,
             vector<DiffPath> paths) {
         unsigned int max = 0;
         DiffPath result;
-        result.empty = true;
+        bool found = false;
         for (const auto &p : paths) {
             if (path.segmentDistance(p.path) > max && path.isChildOf(p.path)) {
                 result = p;
                 max = path.segmentDistance(p.path);
+                found = true;
             }
         }
-        return result;
+
+        return found ? make_optional(result) : none;
     }
 
     DatastoreTransaction::~DatastoreTransaction() {
@@ -294,11 +296,30 @@ namespace devmand::channels::cli::datastore {
         std::stringstream path;
         path << "/" << node->schema->module->name << ":" << node->schema->name
              << pathSoFar;
+        if(node->schema->nodetype == LLLYS_LIST) {
+            vector<string> keys;
+            auto* list = (lllys_node_list*)node->schema;
+            for (uint8_t i = 0; i < list->keys_size; i++) {
+                keys.emplace_back(string(list->keys[i]->name));
+            }
+            for (const auto &key : keys) {
+                lllyd_node *child = node->child;
+                string childName(child->schema->name);
+                while(childName != key) {
+                    child = node->next;
+                    childName.assign(child->schema->name);
+                }
+                lllyd_node_leaf_list * leafChild = (lllyd_node_leaf_list *) child;
+                string keyValue(leafChild->value_str);
+                path << "[" << key << "='" << keyValue << "']";
+            }
+        }
         if (node->parent == nullptr) {
             return path.str();
         }
         return buildFullPath(node->parent, path.str());
     }
+
 
     void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
         switch (type) {

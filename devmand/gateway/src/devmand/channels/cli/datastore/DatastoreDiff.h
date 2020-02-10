@@ -21,15 +21,17 @@ struct DatastoreDiff {
   const dynamic after = nullptr;
   const DatastoreDiffType type;
   const Path path;
+  const Path keyedPath;
 
   DatastoreDiff(
       const dynamic& _before,
       const dynamic& _after,
       const DatastoreDiffType _type,
       const Path _path)
-      : before(_before), after(_after), type(_type), path(_path) {}
+      : before(_before), after(_after), type(_type), path(_path.unkeyed()), keyedPath(_path) {}
 
-    DatastoreDiff(const DatastoreDiff & diff) : before(diff.before), after(diff.after), type(diff.type), path(diff.path) {
+    DatastoreDiff(const DatastoreDiff & diff) : before(diff.before), after(diff.after), type(diff.type), path(diff.path),
+    keyedPath(diff.keyedPath)  {
 
   }
 };
