@@ -72,6 +72,7 @@ class DatastoreTransaction {
   void print(lllyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lllyd_node* initial);
+  static void addKeysToPath(lllyd_node* node, std::stringstream & path);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
   Optional<DiffPath> pickClosestPath(Path, vector<DiffPath> paths);
   map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);

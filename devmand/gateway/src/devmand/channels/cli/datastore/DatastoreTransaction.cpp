@@ -292,27 +292,31 @@ namespace devmand::channels::cli::datastore {
         }
     }
 
+    void DatastoreTransaction::addKeysToPath(lllyd_node* node, std::stringstream & path){
+        vector<string> keys;
+        auto* list = (lllys_node_list*)node->schema;
+        for (uint8_t i = 0; i < list->keys_size; i++) {
+            keys.emplace_back(string(list->keys[i]->name));
+        }
+        for (const auto &key : keys) {
+            lllyd_node *child = node->child;
+            string childName(child->schema->name);
+            while(childName != key) {
+                child = node->next;
+                childName.assign(child->schema->name);
+            }
+            lllyd_node_leaf_list * leafChild = (lllyd_node_leaf_list *) child;
+            string keyValue(leafChild->value_str);
+            path << "[" << key << "='" << keyValue << "']";
+        }
+    }
+
     string DatastoreTransaction::buildFullPath(lllyd_node *node, string pathSoFar) {
         std::stringstream path;
         path << "/" << node->schema->module->name << ":" << node->schema->name
              << pathSoFar;
         if(node->schema->nodetype == LLLYS_LIST) {
-            vector<string> keys;
-            auto* list = (lllys_node_list*)node->schema;
-            for (uint8_t i = 0; i < list->keys_size; i++) {
-                keys.emplace_back(string(list->keys[i]->name));
-            }
-            for (const auto &key : keys) {
-                lllyd_node *child = node->child;
-                string childName(child->schema->name);
-                while(childName != key) {
-                    child = node->next;
-                    childName.assign(child->schema->name);
-                }
-                lllyd_node_leaf_list * leafChild = (lllyd_node_leaf_list *) child;
-                string keyValue(leafChild->value_str);
-                path << "[" << key << "='" << keyValue << "']";
-            }
+            addKeysToPath(node, path);
         }
         if (node->parent == nullptr) {
             return path.str();
