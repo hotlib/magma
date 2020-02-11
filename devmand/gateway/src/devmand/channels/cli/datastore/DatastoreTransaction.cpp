@@ -10,6 +10,7 @@
 #include <devmand/channels/cli/datastore/DatastoreTransaction.h>
 #include <libyang/tree_data.h>
 #include <libyang/tree_schema.h>
+#include <set>
 
 namespace devmand::channels::cli::datastore {
 
@@ -360,7 +361,12 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
 
 dynamic DatastoreTransaction::read(Path path) {
   checkIfCommitted();
-  return read(path, root);
+  const dynamic& aDynamic = read(path, root);
+  if (aDynamic == nullptr) {
+    return dynamic::object(); // for diffs we need an empty object
+  }
+
+  return aDynamic;
 }
 
 dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
@@ -368,7 +374,12 @@ dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
     return dynamic::object();
   }
 
-  return read(path, datastoreState->root);
+  const dynamic& result = read(path, datastoreState->root);
+  if (result == nullptr) {
+    return dynamic::object(); // for diffs we need an empty object
+  }
+
+  return result;
 }
 
 dynamic DatastoreTransaction::read(Path path, lllyd_node* node) {
@@ -466,40 +477,53 @@ void DatastoreTransaction::splitToMany(
   }
 }
 
-Path DatastoreTransaction::unifyLength(Path registeredPath, Path keyedPath){
-    while(keyedPath.getDepth() != registeredPath.getDepth()){
-        keyedPath = keyedPath.getParent();
-    }
-    return keyedPath;
+Path DatastoreTransaction::unifyLength(Path registeredPath, Path keyedPath) {
+  while (keyedPath.getDepth() != registeredPath.getDepth()) {
+    keyedPath = keyedPath.getParent();
+  }
+  return keyedPath;
 }
 
 multimap<Path, DatastoreDiff> DatastoreTransaction::diff(
     vector<DiffPath> registeredPaths) {
+  std::set<Path> alreadyProcessedDiff;
   multimap<Path, DatastoreDiff> result;
   const map<Path, DatastoreDiff>& diffs = diff();
   for (const auto& diffItem : diffs) { // take libyang diffs
     const map<Path, DatastoreDiff>& smallerDiffs =
         splitDiff(diffItem.second); // split them to smaller ones
-    for (const auto& smallerDiffsItem : smallerDiffs) { // merge them
+    for (const auto& smallerDiffsItem :
+         smallerDiffs) { // map the smaller ones to their registered path
       Optional<Path> registeredPath =
           getRegisteredPath(registeredPaths, smallerDiffsItem.first);
       if (registeredPath) {
-          //this is the registered path provided by the handlers
+        // this is the registered path provided by the handlers
         Path registeredPathHandlingDiff = registeredPath.value();
-          //we need a keyed path to read before and after state for the handlers
-        Path pathForReadingBeforeAfter = unifyLength(registeredPathHandlingDiff, smallerDiffsItem.second.keyedPath);
-        result.emplace(
-            std::make_pair(registeredPathHandlingDiff,
-                    DatastoreDiff(
-                            //we read what the state was before (no just the change but the whole
-                            // subtree under the registered path)
-                            readAlreadyCommitted(pathForReadingBeforeAfter),
-                            //we read what is there now (no just the change but the whole
-                            //subtree under the registered path)
-                            read(pathForReadingBeforeAfter),
-                                  smallerDiffsItem.second.type,
-                                  smallerDiffsItem.second.keyedPath
-                            )));
+        // we need a keyed path to read before and after state for the handlers
+        Path pathForReadingBeforeAfter = unifyLength(
+            registeredPathHandlingDiff, smallerDiffsItem.second.keyedPath);
+        if (alreadyProcessedDiff.count(
+                pathForReadingBeforeAfter)) { // we could get duplicates e.g.
+                                              // multiple leafs are updated in
+                                              // the same container (we get
+                                              // multiple diffs from libyang,
+                                              // but want one resulting diff)
+          alreadyProcessedDiff.emplace(pathForReadingBeforeAfter);
+        } else {
+          continue;
+        }
+        result.emplace(std::make_pair(
+            registeredPathHandlingDiff,
+            DatastoreDiff(
+                // we read what the state was before (no just the change but the
+                // whole
+                // subtree under the registered path)
+                readAlreadyCommitted(pathForReadingBeforeAfter),
+                // we read what is there now (no just the change but the whole
+                // subtree under the registered path)
+                read(pathForReadingBeforeAfter),
+                smallerDiffsItem.second.type, // we keep the type of change
+                pathForReadingBeforeAfter)));
       } else {
         // TODO no registered paths for occured event
       }
