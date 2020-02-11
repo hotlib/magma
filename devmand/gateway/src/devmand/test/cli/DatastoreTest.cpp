@@ -42,6 +42,8 @@ using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::DiffPath;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
+using devmand::test::utils::cli::networkInstances;
+using devmand::test::utils::cli::updated011Interface;
 using devmand::test::utils::cli::counterPath;
 using devmand::test::utils::cli::interface02state;
 using devmand::test::utils::cli::interface02TopPath;
@@ -500,6 +502,36 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
       EXPECT_EQ(DatastoreDiffType::deleted, multi.second.type);
   }
 }
+
+        TEST_F(DatastoreTest, failingTest) {
+            Datastore datastore(Datastore::operational(), schemaContext);
+            unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+                    datastore.newTx();
+            transaction->overwrite(Path("/"), parseJson(networkInstances));
+            transaction->commit();
+            transaction = datastore.newTx();
+            const char* interface85 =
+                    "/openconfig-interfaces:interfaces/interface[name='0/11']";
+
+            transaction->merge(Path(interface85), parseJson(updated011Interface));
+
+            vector<DiffPath> paths;
+            Path p1("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:config");
+            paths.emplace_back(p1, true);
+
+            const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
+            for (const auto& multi : multimap) {
+                MLOG(MINFO) << "key: " << multi.first.str() << " handles:  " <<  multi.second.keyedPath.str();
+            }
+
+//            const map<Path, DatastoreDiff> &map = transaction->diff();
+//            for (const auto& item : map) {
+//                MLOG(MINFO) << "key: " << item.first.str() << " handles:  " <<  item.second.keyedPath.str() << " type: " <<  item.second.type;
+//            }
+        }
+
+
+
 
 TEST_F(DatastoreTest, diff2changes) {
   shared_ptr<Datastore> datastore =

@@ -45,11 +45,16 @@ void DatastoreTransaction::overwrite(Path path, const dynamic& aDynamic) {
 }
 
 lllyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
-  return lllyd_parse_mem(
+  lllyd_node* result = lllyd_parse_mem(
       datastoreState->ctx,
       const_cast<char*>(folly::toJson(entity).c_str()),
       LLLYD_JSON,
       datastoreTypeToLydOption() | LLLYD_OPT_TRUSTED);
+  if (result == nullptr) {
+    throw DatastoreException("Unable to create subtree from provided data");
+  }
+
+  return result;
 }
 
 dynamic DatastoreTransaction::appendAllParents(
@@ -84,6 +89,7 @@ void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   if (path.str() != path.PATH_SEPARATOR) {
     dynamic withParents = appendAllParents(path, aDynamic);
     lllyd_node* pNode = dynamic2lydNode(withParents);
+
     if (root != nullptr) { // there exists something to merge to
       lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
     } else {
@@ -354,8 +360,19 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
 
 dynamic DatastoreTransaction::read(Path path) {
   checkIfCommitted();
+  return read(path, root);
+}
 
-  llly_set* pSet = lllyd_find_path(root, const_cast<char*>(path.str().c_str()));
+dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
+  if (datastoreState->root == nullptr) {
+    return dynamic::object();
+  }
+
+  return read(path, datastoreState->root);
+}
+
+dynamic DatastoreTransaction::read(Path path, lllyd_node* node) {
+  llly_set* pSet = lllyd_find_path(node, const_cast<char*>(path.str().c_str()));
 
   if (pSet == nullptr) {
     return nullptr;
@@ -431,8 +448,12 @@ void DatastoreTransaction::splitToMany(
     Path p,
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
+  if (input.isArray()) {
+    // TODO fix this
+    return;
+  }
+
   for (const auto& item : input.items()) {
-    // MLOG(MINFO) << item.first.c_str();
     if (item.second.isArray() || item.second.isObject()) {
       string currentPath = p.str();
       if (p.getLastSegment() !=
@@ -440,12 +461,16 @@ void DatastoreTransaction::splitToMany(
         currentPath = p.str() + "/" + item.first.c_str();
       }
       result.emplace_back(std::make_pair(currentPath, input));
-      //            MLOG(MINFO) << "size: " << result.size() <<  " idem
-      //            spracovat " << item.first.c_str() << " path: " <<
-      //            currentPath;
       splitToMany(Path(currentPath), item.second, result);
     }
   }
+}
+
+Path DatastoreTransaction::unifyLength(Path registeredPath, Path keyedPath){
+    while(keyedPath.getDepth() != registeredPath.getDepth()){
+        keyedPath = keyedPath.getParent();
+    }
+    return keyedPath;
 }
 
 multimap<Path, DatastoreDiff> DatastoreTransaction::diff(
@@ -459,8 +484,22 @@ multimap<Path, DatastoreDiff> DatastoreTransaction::diff(
       Optional<Path> registeredPath =
           getRegisteredPath(registeredPaths, smallerDiffsItem.first);
       if (registeredPath) {
+          //this is the registered path provided by the handlers
+        Path registeredPathHandlingDiff = registeredPath.value();
+          //we need a keyed path to read before and after state for the handlers
+        Path pathForReadingBeforeAfter = unifyLength(registeredPathHandlingDiff, smallerDiffsItem.second.keyedPath);
         result.emplace(
-            std::make_pair(registeredPath.value(), smallerDiffsItem.second));
+            std::make_pair(registeredPathHandlingDiff,
+                    DatastoreDiff(
+                            //we read what the state was before (no just the change but the whole
+                            // subtree under the registered path)
+                            readAlreadyCommitted(pathForReadingBeforeAfter),
+                            //we read what is there now (no just the change but the whole
+                            //subtree under the registered path)
+                            read(pathForReadingBeforeAfter),
+                                  smallerDiffsItem.second.type,
+                                  smallerDiffsItem.second.keyedPath
+                            )));
       } else {
         // TODO no registered paths for occured event
       }
@@ -494,6 +533,5 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   diffs.emplace(diff.path, diff);
   return diffs;
 }
-
 
 } // namespace devmand::channels::cli::datastore

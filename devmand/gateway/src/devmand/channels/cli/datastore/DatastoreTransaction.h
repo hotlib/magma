@@ -82,11 +82,14 @@ class DatastoreTransaction {
   string toJson(lllyd_node* initial);
   static void addKeysToPath(lllyd_node* node, std::stringstream& path);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
+  static Path unifyLength(Path registeredPath, Path keyedPath);
   Optional<DiffPath> pickClosestPath(Path, vector<DiffPath> paths);
   map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
   void
   splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>& v);
   Optional<Path> getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
+  dynamic read(Path path, lllyd_node* node);
+  dynamic readAlreadyCommitted(Path path);
 
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
