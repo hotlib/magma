@@ -495,4 +495,5 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   return diffs;
 }
 
+
 } // namespace devmand::channels::cli::datastore

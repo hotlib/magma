@@ -177,6 +177,9 @@ string newInterface =
 string interfaceCounters =
     "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters";
 
+string interfaceCountersWithKey =
+    "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters";
+
 string interface02state =
     "{\n"
     "  \"openconfig-interfaces:state\": {\n"

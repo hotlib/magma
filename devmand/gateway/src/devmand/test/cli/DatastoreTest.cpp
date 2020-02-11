@@ -46,6 +46,7 @@ using devmand::test::utils::cli::counterPath;
 using devmand::test::utils::cli::interface02state;
 using devmand::test::utils::cli::interface02TopPath;
 using devmand::test::utils::cli::interfaceCounters;
+using devmand::test::utils::cli::interfaceCountersWithKey;
 using devmand::test::utils::cli::newInterface;
 using devmand::test::utils::cli::newInterfaceTopPath;
 using devmand::test::utils::cli::openconfigInterfacesInterfaces;
@@ -445,8 +446,7 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
   transaction->delete_(interface02TopPath + "/state");
   transaction->commit();
   transaction = datastore.newTx();
-  dynamic interface02 =
-      transaction->read(interface02TopPath); //+ "/state/counters"
+  dynamic interface02 = transaction->read(interface02TopPath);
   interface02["openconfig-interfaces:interface"][0]["state"] =
       folly::dynamic::object();
   interface02["openconfig-interfaces:interface"][0]["state"]["counters"] =
@@ -462,8 +462,8 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
   vector<DiffPath> paths;
   Path p1(statePath);
   Path p2(counterPath);
-  paths.emplace_back(p1, false, false);
-  paths.emplace_back(p2, false, false);
+  paths.emplace_back(p1, false);
+  paths.emplace_back(p2, false);
 
   const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
 
@@ -472,12 +472,10 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
   for (auto itr = it.first; itr != it.second; ++itr) {
     EXPECT_EQ(statePath, itr->first.str());
     EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
-    MLOG(MINFO) << itr->second.path.str();
-    MLOG(MINFO) << itr->second.keyedPath.str();
-    if(itr->second.keyedPath.str() == statePathWithKey){
-    EXPECT_EQ(statePathWithKey, itr->second.keyedPath.str());
+    if (itr->second.keyedPath.str() == statePathWithKey) {
+      EXPECT_EQ(statePathWithKey, itr->second.keyedPath.str());
     } else {
-        EXPECT_EQ(statePathWithKey + "/counters", itr->second.keyedPath.str());
+      EXPECT_EQ(statePathWithKey + "/counters", itr->second.keyedPath.str());
     }
   }
 }
@@ -493,13 +491,13 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
 
   vector<DiffPath> paths;
   Path p1("/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
-  paths.emplace_back(p1, false, false);
+  paths.emplace_back(p1, false);
 
   const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
   for (const auto& multi : multimap) {
-    MLOG(MINFO) << "key: " << multi.first << " handles: " << multi.second.path
-                << " (type: " << multi.second.type << ")"
-                << " before: " << toPrettyJson(multi.second.before);
+      EXPECT_EQ(p1.str(), multi.first.str());
+      EXPECT_EQ(p1.str() + "/openconfig-interfaces:state", multi.second.path.str());
+      EXPECT_EQ(DatastoreDiffType::deleted, multi.second.type);
   }
 }
 
@@ -512,16 +510,28 @@ TEST_F(DatastoreTest, diff2changes) {
 
   transaction->commit();
   const unique_ptr<DatastoreTransaction>& transaction2 = datastore->newTx();
-  dynamic errors = transaction2->read(interface02TopPath + "/state/counters");
-  errors["openconfig-interfaces:counters"]["out-errors"] = "777";
-  errors["openconfig-interfaces:counters"]["out-discards"] = "17";
-  transaction2->merge(interface02TopPath + "/state/counters", errors);
+  dynamic counters = transaction2->read(interface02TopPath + "/state/counters");
+  counters["openconfig-interfaces:counters"]["out-errors"] = "777";
+  counters["openconfig-interfaces:counters"]["out-discards"] = "17";
+  transaction2->merge(interface02TopPath + "/state/counters", counters);
   vector<DiffPath> paths;
-  paths.emplace_back(Path(interfaceCounters), false, false);
-  const std::multimap<Path, DatastoreDiff>& multimap =
-      transaction2->diff(paths);
+  paths.emplace_back(Path(interfaceCounters), false);
+  const std::multimap<Path, DatastoreDiff>& multimap = transaction2->diff(paths);
   for (const auto& multi : multimap) {
-    MLOG(MINFO) << "key: " << multi.first << " handles: " << multi.second.path;
+    EXPECT_EQ(multi.first.str(), interfaceCounters);
+    if (interfaceCountersWithKey + "/openconfig-interfaces:out-discards" ==
+        multi.second.keyedPath.str()) {
+      EXPECT_EQ(
+          multi.second.keyedPath.str(),
+          interfaceCountersWithKey + "/openconfig-interfaces:out-discards");
+    } else {
+      EXPECT_EQ(
+          multi.second.keyedPath.str(),
+          interfaceCountersWithKey + "/openconfig-interfaces:out-errors");
+    }
+
+    MLOG(MINFO) << "key: " << multi.first
+                << " handles: " << multi.second.keyedPath;
   }
 }
 

@@ -33,25 +33,33 @@ using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
 using devmand::devices::cli::Path;
 using folly::dynamic;
+using folly::Optional;
 using folly::parseJson;
 using std::atomic_bool;
+using std::multimap;
 using std::runtime_error;
 using std::vector;
-using folly::Optional;
-using std::multimap;
 
 namespace devmand::channels::cli::datastore {
 
 struct DiffPath {
   Path path;
   bool asterix;
-  bool empty = false;
 
-  DiffPath() : path("/"), asterix(false), empty(true){
+  DiffPath() : path("/"), asterix(false) {}
 
+  DiffPath(const Path _path, bool _asterix) : path(_path), asterix(_asterix) {}
+};
+
+struct DiffResult {
+  multimap<Path, DatastoreDiff> diffs;
+  vector<Path> unhandledDiffs;
+  void appendUnhandledPath(Path pathToAppend){
+      unhandledDiffs.emplace_back(pathToAppend);
   }
-
-  DiffPath(const Path _path, bool _asterix, bool _empty) : path(_path), asterix(_asterix), empty(_empty) {}
+  DiffResult(
+      const multimap <Path, DatastoreDiff> &_diffs, const vector<Path> &_unhandledDiffs)
+      : diffs(_diffs), unhandledDiffs(_unhandledDiffs) {}
 };
 
 class DatastoreTransaction {
@@ -72,16 +80,16 @@ class DatastoreTransaction {
   void print(lllyd_node* nodeToPrint);
   void checkIfCommitted();
   string toJson(lllyd_node* initial);
-  static void addKeysToPath(lllyd_node* node, std::stringstream & path);
+  static void addKeysToPath(lllyd_node* node, std::stringstream& path);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
   Optional<DiffPath> pickClosestPath(Path, vector<DiffPath> paths);
   map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
-  void splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>  & v);
+  void
+  splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>& v);
   Optional<Path> getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
 
-public:
-
-    DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
+ public:
+  DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
   dynamic read(Path path);
   void print();
