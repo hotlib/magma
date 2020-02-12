@@ -90,7 +90,8 @@ class DatastoreTransaction {
   Optional<Path> getRegisteredPath(vector<DiffPath> registeredPaths, Path path);
   dynamic read(Path path, lllyd_node* node);
   dynamic readAlreadyCommitted(Path path);
-
+  map<Path, DatastoreDiff> diff(lllyd_node* a, lllyd_node* b);
+  void filterMap(vector<string> moduleNames,  map<Path, DatastoreDiff> & map);
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 

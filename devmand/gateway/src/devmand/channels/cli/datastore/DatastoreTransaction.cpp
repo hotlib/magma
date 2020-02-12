@@ -161,8 +161,17 @@ string DatastoreTransaction::toJson(lllyd_node* initial) {
 DatastoreTransaction::DatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState)
     : datastoreState(_datastoreState) {
+
   if (not datastoreState->isEmpty()) {
-    root = lllyd_dup(datastoreState->root, 1);
+      root = lllyd_dup(datastoreState->root, 1);
+
+      lllyd_node *tmp = datastoreState->root->next;
+      lllyd_node * tmpRoot = root;
+      while(tmp != nullptr){
+          tmpRoot->next = lllyd_dup(tmp, 1);
+          tmpRoot = tmpRoot->next;
+          tmp = tmp->next;
+      }
   }
 }
 
@@ -173,7 +182,46 @@ lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
   return n;
 }
 
+void DatastoreTransaction::filterMap(vector<string> moduleNames, map<Path, DatastoreDiff> & data){
+    vector<Path> toBeDeleted;
+    for (const auto &m : data) {
+        for (const auto &moduleName : moduleNames) {
+            if(m.first.str().rfind(moduleName, 0) == 0){
+                toBeDeleted.emplace_back(m.first);
+            }
+        }
+    }
+    for (const auto &beDeleted : toBeDeleted) {
+        data.erase(beDeleted);
+    }
+}
+
 map<Path, DatastoreDiff> DatastoreTransaction::diff() {
+    map<Path, DatastoreDiff> allDiffs;
+    lllyd_node* a = datastoreState->root;
+    lllyd_node* b = root;
+    vector<string> previousModuleNames;
+    while(a != nullptr && b != nullptr) {
+        lllyd_node* aNext = a->next;
+        lllyd_node* bNext = b->next;
+        a->next = nullptr;
+        b->next = nullptr;
+        map<Path, DatastoreDiff> partialDiff = diff(a, b);
+        std::stringstream moduleAndNodeName ;
+        moduleAndNodeName << "/" << a->schema->module->name << ":" << a->schema->name;
+        filterMap(previousModuleNames, partialDiff);
+        allDiffs.insert(partialDiff.begin(), partialDiff.end());
+        a->next = aNext;
+        b->next = bNext;
+        a = aNext;
+        b = bNext;
+        previousModuleNames.emplace_back(moduleAndNodeName.str());
+    }
+
+    return allDiffs;
+}
+
+map<Path, DatastoreDiff> DatastoreTransaction::diff(lllyd_node* a, lllyd_node* b) {
   checkIfCommitted();
   if (datastoreState->isEmpty()) {
     DatastoreException ex("Unable to diff, datastore tree does not yet exist");
@@ -181,7 +229,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
     throw ex;
   }
   lllyd_difflist* difflist =
-      lllyd_diff(datastoreState->root, root, LLLYD_DIFFOPT_WITHDEFAULTS);
+      lllyd_diff(a, b, LLLYD_DIFFOPT_WITHDEFAULTS);
   if (!difflist) {
     DatastoreException ex("Something went wrong, no diff possible");
     MLOG(MWARNING) << ex.what();
@@ -245,7 +293,7 @@ Optional<Path> DatastoreTransaction::getRegisteredPath(
                   << " changed path: " << path.str();
     }
   } else {
-    MLOG(MINFO) << "Totally Unhandled event for changed path: " << path.str();
+    MLOG(MINFO) << "Unhandled event for changed path: " << path.str();
   }
 
   return none;
@@ -460,19 +508,20 @@ void DatastoreTransaction::splitToMany(
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
   if (input.isArray()) {
-    // TODO fix this
-    return;
-  }
-
-  for (const auto& item : input.items()) {
-    if (item.second.isArray() || item.second.isObject()) {
-      string currentPath = p.str();
-      if (p.getLastSegment() !=
-          item.first.asString()) { // TODO skip last overlapping segment name
-        currentPath = p.str() + "/" + item.first.c_str();
+    for (const auto& item : input) {
+      splitToMany(p, item, result);
+    }
+  } else if (input.isObject()) {
+    for (const auto& item : input.items()) {
+      if (item.second.isArray() || item.second.isObject()) {
+        string currentPath = p.str();
+        if (p.getLastSegment() !=
+            item.first.asString()) { // TODO skip last overlapping segment name
+          currentPath = p.str() + "/" + item.first.c_str();
+        }
+        result.emplace_back(std::make_pair(currentPath, input));
+        splitToMany(Path(currentPath), item.second, result);
       }
-      result.emplace_back(std::make_pair(currentPath, input));
-      splitToMany(Path(currentPath), item.second, result);
     }
   }
 }

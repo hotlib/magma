@@ -508,21 +508,29 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
             unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
                     datastore.newTx();
             transaction->overwrite(Path("/"), parseJson(networkInstances));
+            const dynamic &networkinstances = transaction->read("/");
+           // MLOG(MINFO) << "networkinstances: " << toPrettyJson(networkinstances);
+          // transaction->print();
             transaction->commit();
             transaction = datastore.newTx();
-            const char* interface85 =
-                    "/openconfig-interfaces:interfaces/interface[name='0/11']";
+//            const char* interface85 =
+//                    "/openconfig-interfaces:interfaces/interface[name='0/11']";
 
-            transaction->merge(Path(interface85), parseJson(updated011Interface));
+            //transaction->overwrite(Path(interface85), parseJson(updated011Interface));
 
-            vector<DiffPath> paths;
-            Path p1("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:config");
-            paths.emplace_back(p1, true);
+//            vector<DiffPath> paths;
+//            Path p1("/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:config");
+//            paths.emplace_back(p1, true);
 
-            const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
-            for (const auto& multi : multimap) {
-                MLOG(MINFO) << "key: " << multi.first.str() << " handles:  " <<  multi.second.keyedPath.str();
+            const map<Path, DatastoreDiff> &diffz = transaction->diff();
+            for (const auto& d : diffz) {
+                MLOG(MINFO) << "key: " << d.first.str() << " change:  " <<  d.second.type;
             }
+            
+//            const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
+//            for (const auto& multi : multimap) {
+//                MLOG(MINFO) << "key: " << multi.first.str() << " handles:  " <<  multi.second.keyedPath.str();
+//            }
 
 //            const map<Path, DatastoreDiff> &map = transaction->diff();
 //            for (const auto& item : map) {
