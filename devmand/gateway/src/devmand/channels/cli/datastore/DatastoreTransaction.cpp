@@ -52,7 +52,7 @@ lllyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
       LLLYD_JSON,
       datastoreTypeToLydOption() | LLLYD_OPT_TRUSTED);
   if (result == nullptr) {
-    throw DatastoreException("Unable to create subtree from provided data");
+    throw DatastoreException("Unable to create subtree from provided data " + string(llly_errmsg(datastoreState->ctx)));
   }
 
   return result;
@@ -92,16 +92,24 @@ void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
     lllyd_node* pNode = dynamic2lydNode(withParents);
 
     if (root != nullptr) { // there exists something to merge to
-      lllyd_merge(root, pNode, LLLYD_OPT_DESTRUCT);
+        lllyd_node * tmp = root;
+        lllyd_node * next;
+        while(tmp != nullptr){
+            next = tmp->next;
+            tmp->next = nullptr;
+            lllyd_merge(tmp, pNode, 0);
+            tmp = next;
+        }
+
     } else {
       root = pNode;
     }
+   freeRoot(pNode);
   } else {
-    if (root != nullptr) {
-      lllyd_free(root);
-    }
+    freeRoot();
     root = dynamic2lydNode(aDynamic);
   }
+
 }
 
 void DatastoreTransaction::commit() {
@@ -111,7 +119,7 @@ void DatastoreTransaction::commit() {
   lllyd_node* rootToBeMerged = computeRoot(
       root); // need the real root for convenience and copy via lllyd_dup
   if (!datastoreState->isEmpty()) {
-    lllyd_free(datastoreState->root);
+      freeRoot(datastoreState->root);
   }
   datastoreState->root = rootToBeMerged;
 
@@ -122,9 +130,8 @@ void DatastoreTransaction::commit() {
 
 void DatastoreTransaction::abort() {
   checkIfCommitted();
-  if (root != nullptr) {
-    lllyd_free(root);
-  }
+
+  freeRoot();
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
@@ -162,7 +169,7 @@ DatastoreTransaction::DatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState)
     : datastoreState(_datastoreState) {
 
-  if (not datastoreState->isEmpty()) {
+    if (not datastoreState->isEmpty()) {
       root = lllyd_dup(datastoreState->root, 1);
 
       lllyd_node *tmp = datastoreState->root->next;
@@ -317,9 +324,10 @@ Optional<DiffPath> DatastoreTransaction::pickClosestPath(
 }
 
 DatastoreTransaction::~DatastoreTransaction() {
-  if (not hasCommited && root != nullptr) {
-    lllyd_free(root);
-  }
+
+    if (not hasCommited) {
+        freeRoot();
+    }
   datastoreState->transactionUnderway.store(false);
 }
 
@@ -491,13 +499,13 @@ bool DatastoreTransaction::isValid() {
 int DatastoreTransaction::datastoreTypeToLydOption() {
   switch (datastoreState->type) {
     case operational:
-      return LLLYD_OPT_GET; // operational validation, turns off validation for
+      return LLLYD_OPT_GET | LLLYD_OPT_STRICT; // operational validation, turns off validation for
       // things like mandatory nodes, leaf-refs etc.
       // because devices do not have to support all
       // mandatory nodes (like BGP) and thus would only
       // cause false validation errors
     case config:
-      return LLLYD_OPT_GETCONFIG; // config validation with turned off checks
+      return LLLYD_OPT_GETCONFIG | LLLYD_OPT_STRICT; // config validation with turned off checks
       // because of reasons mentioned above
   }
   return 0;
@@ -551,7 +559,7 @@ multimap<Path, DatastoreDiff> DatastoreTransaction::diff(
         // we need a keyed path to read before and after state for the handlers
         Path pathForReadingBeforeAfter = unifyLength(
             registeredPathHandlingDiff, smallerDiffsItem.second.keyedPath);
-        if (alreadyProcessedDiff.count(
+        if (not alreadyProcessedDiff.count(
                 pathForReadingBeforeAfter)) { // we could get duplicates e.g.
                                               // multiple leafs are updated in
                                               // the same container (we get
@@ -602,9 +610,22 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
     }
     return diffs;
   }
-
   diffs.emplace(diff.path, diff);
   return diffs;
 }
+
+    void DatastoreTransaction::freeRoot() {
+        freeRoot(root);
+    }
+
+    void DatastoreTransaction::freeRoot(lllyd_node *r) {
+        lllyd_node * tmp = r;
+        while(tmp != nullptr) {
+            r = tmp;
+            r->next = nullptr;
+            lllyd_free(r);
+            tmp = tmp->next;
+        }
+    }
 
 } // namespace devmand::channels::cli::datastore

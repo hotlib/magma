@@ -92,6 +92,8 @@ class DatastoreTransaction {
   dynamic readAlreadyCommitted(Path path);
   map<Path, DatastoreDiff> diff(lllyd_node* a, lllyd_node* b);
   void filterMap(vector<string> moduleNames,  map<Path, DatastoreDiff> & map);
+  void freeRoot();
+  void freeRoot(lllyd_node *r);
  public:
   DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
 
