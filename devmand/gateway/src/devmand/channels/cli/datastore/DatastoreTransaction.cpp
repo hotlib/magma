@@ -52,7 +52,8 @@ lllyd_node* DatastoreTransaction::dynamic2lydNode(dynamic entity) {
       LLLYD_JSON,
       datastoreTypeToLydOption() | LLLYD_OPT_TRUSTED);
   if (result == nullptr) {
-    throw DatastoreException("Unable to create subtree from provided data " + string(llly_errmsg(datastoreState->ctx)));
+    string lyErrMessage(llly_errmsg(datastoreState->ctx) == nullptr ? "" : llly_errmsg(datastoreState->ctx));
+    throw DatastoreException("Unable to create subtree from provided data " + lyErrMessage);
   }
 
   return result;

@@ -43,6 +43,8 @@ using devmand::channels::cli::datastore::DiffPath;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
 using devmand::test::utils::cli::networkInstances;
+using devmand::test::utils::cli::threeTrees;
+using devmand::test::utils::cli::threeTrees2;
 using devmand::test::utils::cli::updated011Interface;
 using devmand::test::utils::cli::counterPath;
 using devmand::test::utils::cli::interface02state;
@@ -508,7 +510,6 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
             unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
                     datastore.newTx();
             transaction->overwrite(Path("/"), parseJson(networkInstances));
-            const dynamic &networkinstances = transaction->read("/");
             transaction->commit();
             transaction = datastore.newTx();
             transaction->merge(Path("/openconfig-interfaces:interfaces/interface[name='0/11']"), parseJson(updated011Interface));
@@ -526,6 +527,39 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
             EXPECT_EQ(multimap.begin()->second.keyedPath.str(), "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/11']/openconfig-interfaces:config");
             EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
         }
+
+
+
+        TEST_F(DatastoreTest, threeIdenpendentTreesDiffUpdateTest) {
+            Datastore datastore(Datastore::operational(), schemaContext);
+            unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+                    datastore.newTx();
+            transaction->overwrite(Path("/"), parseJson(threeTrees2));
+            transaction->commit();
+//            transaction = datastore.newTx();
+//            transaction->delete_(Path("/openconfig-network-instance:network-instances/network-instance['default']/config"));
+
+//            vector<DiffPath> paths;
+//            Path p1("/openconfig-network-instance:network-instances/");
+//            paths.emplace_back(p1, true);
+//
+//            const std::multimap<Path, DatastoreDiff>& multimap = transaction->diff(paths);
+//            for (const auto& multi : multimap) {
+//                MLOG(MINFO) << "key: " << multi.first.str() << " handles:  " <<  multi.second.keyedPath.str();
+//            }
+
+//            EXPECT_EQ(multimap.begin()->first.str(), "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:config");
+//            EXPECT_EQ(multimap.begin()->second.keyedPath.str(), "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/11']/openconfig-interfaces:config");
+//            EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
+        }
+
+
+
+
+
+
+
+
 
 
 
