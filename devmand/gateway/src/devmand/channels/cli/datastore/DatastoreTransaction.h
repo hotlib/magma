@@ -11,6 +11,7 @@
 #include <devmand/channels/cli/datastore/DatastoreState.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <devmand/devices/cli/schema/Path.h>
+#include <devmand/devices/cli/schema/BindingContext.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <libyang/libyang.h>
@@ -37,6 +38,7 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 using ydk::Entity;
+using devmand::devices::cli::SchemaContext;
 
 namespace devmand::channels::cli::datastore {
 
@@ -62,6 +64,8 @@ class DatastoreTransaction {
   shared_ptr<DatastoreState> datastoreState;
   lllyd_node* root = nullptr;
   atomic_bool hasCommited = ATOMIC_VAR_INIT(false);
+  SchemaContext& schemaContext;
+
   void validateBeforeCommit();
   static lllyd_node* computeRoot(lllyd_node* n);
   int datastoreTypeToLydOption();
@@ -97,7 +101,7 @@ class DatastoreTransaction {
  public:
     map<Path, DatastoreDiff> diff();
 
-    DatastoreTransaction(shared_ptr<DatastoreState> datastoreState);
+    DatastoreTransaction(shared_ptr<DatastoreState> datastoreState, SchemaContext& _schemaContext);
   dynamic read(Path path);
   void print();
   DiffResult diff(vector<DiffPath> registeredPaths);

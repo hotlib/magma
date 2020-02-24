@@ -180,8 +180,8 @@ string DatastoreTransaction::toJson(lllyd_node* initial) {
 }
 
 DatastoreTransaction::DatastoreTransaction(
-    shared_ptr<DatastoreState> _datastoreState)
-    : datastoreState(_datastoreState) {
+    shared_ptr<DatastoreState> _datastoreState, SchemaContext& _schemaContext)
+    : datastoreState(_datastoreState), schemaContext(_schemaContext) {
   if (not datastoreState->isEmpty()) {
     root = lllyd_dup(datastoreState->root, 1);
 
@@ -438,46 +438,46 @@ string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
 }
 
 //TODO toto je len tak
-    string DatastoreTransaction::appendToPath(lllyd_node* node, string pathSoFar) {
-
-        llly_set* pSet = findNode(node, pathSoFar);
-
-        if (pSet == nullptr) {
-            return nullptr;
-        }
-
-        if (pSet->number == 0) {
-            llly_set_free(pSet);
-            return nullptr;
-        }
-
-        if (pSet->number > 1) {
-            llly_set_free(pSet);
-
-            DatastoreException ex(
-                    "Too many results from path: " + path.str() +
-                    " , query must target a unique element");
-            MLOG(MWARNING) << ex.what();
-            throw ex;
-        }
-
-        const string& json = toJson(pSet->set.d[0]);
-        llly_set_free(pSet);
-        return parseJson(json);
-
-
-
-        std::stringstream path;
-        path << "/" << node->schema->module->name << ":" << node->schema->name;
-        if (node->schema->nodetype == LLLYS_LIST) {
-            addKeysToPath(node, path);
-        }
-        path << pathSoFar;
-        if (node->parent == nullptr) {
-            return path.str();
-        }
-        return buildFullPath(node->parent, path.str());
-    }
+//    string DatastoreTransaction::appendToPath(lllyd_node* node, string pathSoFar) {
+//
+//        llly_set* pSet = findNode(node, pathSoFar);
+//
+//        if (pSet == nullptr) {
+//            return nullptr;
+//        }
+//
+//        if (pSet->number == 0) {
+//            llly_set_free(pSet);
+//            return nullptr;
+//        }
+//
+//        if (pSet->number > 1) {
+//            llly_set_free(pSet);
+//
+//            DatastoreException ex(
+//                    "Too many results from path: " + path.str() +
+//                    " , query must target a unique element");
+//            MLOG(MWARNING) << ex.what();
+//            throw ex;
+//        }
+//
+//        const string& json = toJson(pSet->set.d[0]);
+//        llly_set_free(pSet);
+//        return parseJson(json);
+//
+//
+//
+//        std::stringstream path;
+//        path << "/" << node->schema->module->name << ":" << node->schema->name;
+//        if (node->schema->nodetype == LLLYS_LIST) {
+//            addKeysToPath(node, path);
+//        }
+//        path << pathSoFar;
+//        if (node->parent == nullptr) {
+//            return path.str();
+//        }
+//        return buildFullPath(node->parent, path.str());
+//    }
 
 
 void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
@@ -613,7 +613,11 @@ void DatastoreTransaction::splitToMany(
     Path p,
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
-  if (input.isArray()) {
+    //MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " << toPrettyJson(input);
+
+    if (input.isArray()) {
+      throw DatastoreException("THIS CAN NEVER HAPPEN!!!!!");
+      MLOG(MINFO) << "dosiel array s pathom " << p.str();
     for (const auto& item : input) {
       splitToMany(p, item, result);
     }
@@ -623,10 +627,43 @@ void DatastoreTransaction::splitToMany(
         string currentPath = p.str();
         if (p.unkeyed().getLastSegment() !=
             item.first.asString()) { // TODO skip last overlapping segment name
-          currentPath = p.str() + "/" + item.first.c_str();
+
+            if(p.str() == "/reallyempty"){ //TODO problem s vymazavanim top level elementu + musi byt module prefix kvoli key resolution!
+                currentPath = string("/") + item.first.c_str();
+            } else {
+                currentPath = p.str() + "/" + item.first.c_str();
+            }
+
+            //MLOG(MINFO) << toPrettyJson(input);
+
+            if(item.second.isArray()){ //ak je to list/array
+                string currentListPath;
+                for (unsigned int j = 0; j < item.second.size(); ++j) {
+                    dynamic arrayObject = item.second[j];
+                //for (const auto& arrayObject : item.second.) { //rozbi ho na drobne
+                    //MLOG(MINFO) << "idem hladat " << currentPath << toPrettyJson(item.second);
+
+                    if(schemaContext.isList(Path(currentPath))){ //zisti ci je tam kluc
+                        for (const auto &key : schemaContext.getKeys(Path(currentPath))) {
+                            currentListPath = currentPath + "[" + key + "='" + arrayObject[key].asString() + "']" ;
+                        }
+                    }
+                    //MLOG(MINFO) << "idem zavolat s: " << currentListPath << " a data: " << toPrettyJson(arrayObject);
+                    splitToMany(Path(currentListPath), arrayObject, result);
+                }
+            } else{
+                result.emplace_back(std::make_pair(currentPath, input));
+                splitToMany(Path(currentPath), item.second, result);
+            }
+
+//            MLOG(MINFO) << "current Path: " << currentPath << " bude to array: " << item.second.isArray() << " keys: ";
+//            if(schemaContext.isList(Path(currentPath))){
+//                for (const auto &key : schemaContext.getKeys(Path(currentPath))) {
+//                    MLOG(MINFO) << "KEY: " << key << " value: " << toPrettyJson(input) ;
+//                }
+//            }
         }
-        result.emplace_back(std::make_pair(currentPath, input));
-        splitToMany(Path(currentPath), item.second, result);
+
       }
     }
   }
@@ -700,7 +737,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   map<Path, DatastoreDiff> diffs;
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
-    splitToMany(diff.keyedPath, diff.after, split);
+      const Path &pathToSend = diff.keyedPath.getDepth() == 1 ? "" : diff.keyedPath;
+      MLOG(MINFO) << "idem poslat: " << pathToSend;
+      splitToMany(pathToSend, diff.after, split); //TODO neposielam ked je top level diff.keyedPath
     for (const auto& s : split) {
       diffs.emplace(
           s.first,
@@ -708,7 +747,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
     }
     return diffs;
   } else if (diff.type == DatastoreDiffType::deleted) {
-    splitToMany(diff.keyedPath, diff.before, split);
+      const Path &pathToSend = diff.keyedPath.getDepth() == 1 ? Path("/reallyempty") : diff.keyedPath; //TODO fake top level element marker
+      MLOG(MINFO) << "idem poslat: " << pathToSend;
+    splitToMany(pathToSend, diff.before, split);
     for (const auto& s : split) {
       diffs.emplace(
           s.first,
@@ -750,8 +791,8 @@ llly_set* DatastoreTransaction::findNode(lllyd_node* node, string path) {
   return pSet;
 }
 
-    lllyd_node *DatastoreTransaction::find(dynamic entity) {
-        return nullptr;
-    }
+//    lllyd_node * DatastoreTransaction::find(dynamic entity) {
+//        return nullptr;
+//    }
 
 } // namespace devmand::channels::cli::datastore

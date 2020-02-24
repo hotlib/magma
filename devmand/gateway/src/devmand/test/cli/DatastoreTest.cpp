@@ -386,14 +386,14 @@ TEST_F(DatastoreTest, deleteSubtreeDiff2) {
   transaction = datastore.newTx();
   transaction->delete_("/openconfig-interfaces:interfaces");
 
-            map<Path, DatastoreDiff> changes = transaction->diff();
-
-            MLOG(MINFO) << "changes: " << changes.size();
-            for (const auto &change : changes) {
-                MLOG(MINFO) << "key: " << change.first.str() << " keydPath: " << change.second.keyedPath.str()
-                << " before data: " << toPrettyJson(change.second.before);
-            }
-  
+//            map<Path, DatastoreDiff> changes = transaction->diff();
+//
+//            MLOG(MINFO) << "changes: " << changes.size();
+//            for (const auto &change : changes) {
+//                MLOG(MINFO) << "key: " << change.first.str() << " keydPath: " << change.second.keyedPath.str()
+//                << " before data: " << toPrettyJson(change.second.before);
+//            }
+//
   vector<DiffPath> paths;
   Path p1(
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
