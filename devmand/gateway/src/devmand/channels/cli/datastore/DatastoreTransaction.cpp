@@ -26,10 +26,11 @@ bool DatastoreTransaction::delete_(Path p) {
     return false;
   }
 
-    if(Path::ROOT == p || p.getDepth() == 1) { //TODO SOLVE FOR MULTITREE p.getDepth() == 1
-        freeRoot();
-        return true;
-    }
+  if (Path::ROOT == p ||
+      p.getDepth() == 1) { // TODO SOLVE FOR MULTITREE p.getDepth() == 1
+    freeRoot();
+    return true;
+  }
 
   lllyd_node* tmp = root;
   lllyd_node* next = nullptr;
@@ -49,7 +50,7 @@ bool DatastoreTransaction::delete_(Path p) {
     MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   }
   for (unsigned int j = 0; j < pSet->number; ++j) {
-     freeRoot(pSet->set.d[j]);
+    freeRoot(pSet->set.d[j]);
   }
   llly_set_free(pSet);
   return true;
@@ -180,7 +181,8 @@ string DatastoreTransaction::toJson(lllyd_node* initial) {
 }
 
 DatastoreTransaction::DatastoreTransaction(
-    shared_ptr<DatastoreState> _datastoreState, SchemaContext& _schemaContext)
+    shared_ptr<DatastoreState> _datastoreState,
+    SchemaContext& _schemaContext)
     : datastoreState(_datastoreState), schemaContext(_schemaContext) {
   if (not datastoreState->isEmpty()) {
     root = lllyd_dup(datastoreState->root, 1);
@@ -223,12 +225,16 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   lllyd_node* a = datastoreState->root;
   lllyd_node* b = root;
 
-  //create/delete root elementu => datastoreState->root alebo root budu NULL
-  if( b == nullptr ) { //todo toto je delete rootu (este chyba create)
-      Path rootPath = Path("/" + string(datastoreState->root->schema->name));
-      DatastoreDiff datastoreDiff(readAlreadyCommitted(rootPath), dynamic::object(), DatastoreDiffType::deleted, rootPath);
-      allDiffs.emplace(rootPath, datastoreDiff);
-      return allDiffs;
+  // create/delete root elementu => datastoreState->root alebo root budu NULL
+  if (b == nullptr) { // todo toto je delete rootu (este chyba create)
+    Path rootPath = Path("/" + string(datastoreState->root->schema->name));
+    DatastoreDiff datastoreDiff(
+        readAlreadyCommitted(rootPath),
+        dynamic::object(),
+        DatastoreDiffType::deleted,
+        rootPath);
+    allDiffs.emplace(rootPath, datastoreDiff);
+    return allDiffs;
   }
 
   vector<string> previousModuleNames;
@@ -344,8 +350,11 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
   if (type == DatastoreDiffType::deleted) {
     for (auto registeredPath : paths) {
+      // MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
+      // registeredPath.path.isChildOf(path) << " registeredPath: " <<
+      // registeredPath.path.str()  << " changed path: " << path;
       if (registeredPath.path.isChildOf(path)) {
-        registeredPath.asterix = true;
+        registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
       }
     }
@@ -437,8 +446,9 @@ string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
   return buildFullPath(node->parent, path.str());
 }
 
-//TODO toto je len tak
-//    string DatastoreTransaction::appendToPath(lllyd_node* node, string pathSoFar) {
+// TODO toto je len tak
+//    string DatastoreTransaction::appendToPath(lllyd_node* node, string
+//    pathSoFar) {
 //
 //        llly_set* pSet = findNode(node, pathSoFar);
 //
@@ -468,8 +478,8 @@ string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
 //
 //
 //        std::stringstream path;
-//        path << "/" << node->schema->module->name << ":" << node->schema->name;
-//        if (node->schema->nodetype == LLLYS_LIST) {
+//        path << "/" << node->schema->module->name << ":" <<
+//        node->schema->name; if (node->schema->nodetype == LLLYS_LIST) {
 //            addKeysToPath(node, path);
 //        }
 //        path << pathSoFar;
@@ -478,7 +488,6 @@ string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
 //        }
 //        return buildFullPath(node->parent, path.str());
 //    }
-
 
 void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   switch (type) {
@@ -551,9 +560,6 @@ dynamic DatastoreTransaction::read(Path path, lllyd_node* node) {
   return parseJson(json);
 }
 
-
-
-
 lllyd_node* DatastoreTransaction::getExistingNode(
     lllyd_node* a,
     lllyd_node* b,
@@ -613,60 +619,69 @@ void DatastoreTransaction::splitToMany(
     Path p,
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
-    //MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " << toPrettyJson(input);
+  //   MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " <<
+  //   toPrettyJson(input);
 
-    if (input.isArray()) {
-      throw DatastoreException("THIS CAN NEVER HAPPEN!!!!!");
-      MLOG(MINFO) << "dosiel array s pathom " << p.str();
+  if (input.isArray()) {
+    throw DatastoreException("THIS CAN NEVER HAPPEN!!!!!"); // TODO premysliet
     for (const auto& item : input) {
       splitToMany(p, item, result);
     }
   } else if (input.isObject()) {
+
+    if (p.str() != "/reallyempty") {
+        result.emplace_back(std::make_pair(
+                p.str(), input)); // adding the whole object under the name
+    }
+
     for (const auto& item : input.items()) {
       if (item.second.isArray() || item.second.isObject()) {
         string currentPath = p.str();
         if (p.unkeyed().getLastSegment() !=
             item.first.asString()) { // TODO skip last overlapping segment name
 
-            if(p.str() == "/reallyempty"){ //TODO problem s vymazavanim top level elementu + musi byt module prefix kvoli key resolution!
-                currentPath = string("/") + item.first.c_str();
-            } else {
-                currentPath = p.str() + "/" + item.first.c_str();
+          if (p.str() ==
+              "/reallyempty") { // TODO problem s vymazavanim top level elementu
+                                // + musi byt module prefix kvoli key
+                                // resolution!
+            currentPath = string("/") + item.first.c_str();
+          } else {
+            currentPath = p.str() + "/" + item.first.c_str();
+          }
+
+          if (item.second.isArray()) { // if it is a YANG list i.e. dynamic
+                                       // array
+
+            for (unsigned int j = 0; j < item.second.size(); ++j) {
+              dynamic arrayObject =
+                  item.second[j]; // go through the YANG list items
+              string currentListPath =
+                  appendKey(arrayObject, currentPath); // append key to path
+              splitToMany(
+                  Path(currentListPath),
+                  arrayObject,
+                  result); // recursively go into the array item
             }
-
-            //MLOG(MINFO) << toPrettyJson(input);
-
-            if(item.second.isArray()){ //ak je to list/array
-                string currentListPath;
-                for (unsigned int j = 0; j < item.second.size(); ++j) {
-                    dynamic arrayObject = item.second[j];
-                //for (const auto& arrayObject : item.second.) { //rozbi ho na drobne
-                    //MLOG(MINFO) << "idem hladat " << currentPath << toPrettyJson(item.second);
-
-                    if(schemaContext.isList(Path(currentPath))){ //zisti ci je tam kluc
-                        for (const auto &key : schemaContext.getKeys(Path(currentPath))) {
-                            currentListPath = currentPath + "[" + key + "='" + arrayObject[key].asString() + "']" ;
-                        }
-                    }
-                    //MLOG(MINFO) << "idem zavolat s: " << currentListPath << " a data: " << toPrettyJson(arrayObject);
-                    splitToMany(Path(currentListPath), arrayObject, result);
-                }
-            } else{
-                result.emplace_back(std::make_pair(currentPath, input));
-                splitToMany(Path(currentPath), item.second, result);
-            }
-
-//            MLOG(MINFO) << "current Path: " << currentPath << " bude to array: " << item.second.isArray() << " keys: ";
-//            if(schemaContext.isList(Path(currentPath))){
-//                for (const auto &key : schemaContext.getKeys(Path(currentPath))) {
-//                    MLOG(MINFO) << "KEY: " << key << " value: " << toPrettyJson(input) ;
-//                }
-//            }
+          } else { // a regular object
+            MLOG(MINFO) << "idem vlozit " << currentPath;
+            result.emplace_back(std::make_pair(currentPath, input));
+            splitToMany(Path(currentPath), item.second, result);
+          }
         }
-
       }
     }
   }
+}
+
+string DatastoreTransaction::appendKey(dynamic data, string pathToList) {
+  if (schemaContext.isList(Path(pathToList))) { // if it is a list
+    for (const auto& key : schemaContext.getKeys(Path(pathToList))) {
+      return pathToList + "[" + key + "='" + data[key].asString() +
+          "']"; // append key to path
+    }
+  }
+
+  return pathToList;
 }
 
 Path DatastoreTransaction::unifyLength(Path registeredPath, Path keyedPath) {
@@ -737,9 +752,13 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   map<Path, DatastoreDiff> diffs;
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
-      const Path &pathToSend = diff.keyedPath.getDepth() == 1 ? "" : diff.keyedPath;
-      MLOG(MINFO) << "idem poslat: " << pathToSend;
-      splitToMany(pathToSend, diff.after, split); //TODO neposielam ked je top level diff.keyedPath
+    const Path& pathToSend =
+        diff.keyedPath.getDepth() == 1 ? "" : diff.keyedPath;
+    MLOG(MINFO) << "idem poslat: " << pathToSend;
+    splitToMany(
+        pathToSend,
+        diff.after,
+        split); // TODO neposielam ked je top level diff.keyedPath
     for (const auto& s : split) {
       diffs.emplace(
           s.first,
@@ -747,8 +766,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
     }
     return diffs;
   } else if (diff.type == DatastoreDiffType::deleted) {
-      const Path &pathToSend = diff.keyedPath.getDepth() == 1 ? Path("/reallyempty") : diff.keyedPath; //TODO fake top level element marker
-      MLOG(MINFO) << "idem poslat: " << pathToSend;
+    const Path& pathToSend = diff.keyedPath.getDepth() == 1
+        ? Path("/reallyempty")
+        : diff.keyedPath; // TODO fake top level element marker
     splitToMany(pathToSend, diff.before, split);
     for (const auto& s : split) {
       diffs.emplace(

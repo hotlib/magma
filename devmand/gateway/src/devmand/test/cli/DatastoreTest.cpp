@@ -42,7 +42,6 @@ using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::DiffPath;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
-using devmand::test::utils::cli::simpleInterfaces;
 using devmand::test::utils::cli::counterPath;
 using devmand::test::utils::cli::ifaces02;
 using devmand::test::utils::cli::interface02state;
@@ -54,6 +53,7 @@ using devmand::test::utils::cli::newInterface;
 using devmand::test::utils::cli::newInterfaceTopPath;
 using devmand::test::utils::cli::openconfigInterfacesInterfaces;
 using devmand::test::utils::cli::operStatus;
+using devmand::test::utils::cli::simpleInterfaces;
 using devmand::test::utils::cli::statePath;
 using devmand::test::utils::cli::statePathWithKey;
 using devmand::test::utils::cli::threeTrees;
@@ -386,29 +386,27 @@ TEST_F(DatastoreTest, deleteSubtreeDiff2) {
   transaction = datastore.newTx();
   transaction->delete_("/openconfig-interfaces:interfaces");
 
-//            map<Path, DatastoreDiff> changes = transaction->diff();
-//
-//            MLOG(MINFO) << "changes: " << changes.size();
-//            for (const auto &change : changes) {
-//                MLOG(MINFO) << "key: " << change.first.str() << " keydPath: " << change.second.keyedPath.str()
-//                << " before data: " << toPrettyJson(change.second.before);
-//            }
-//
+  //            map<Path, DatastoreDiff> changes = transaction->diff();
+  //
+  //            MLOG(MINFO) << "changes: " << changes.size();
+  //            for (const auto &change : changes) {
+  //                MLOG(MINFO) << "key: " << change.first.str() << " keydPath:
+  //                " << change.second.keyedPath.str()
+  //                << " before data: " << toPrettyJson(change.second.before);
+  //            }
+  //
   vector<DiffPath> paths;
   Path p1(
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
   paths.emplace_back(p1, false);
 
-  
   const std::multimap<Path, DatastoreDiff>& multimaps =
       transaction->diff(paths).diffs;
 
   for (const auto& item : multimaps) {
-    MLOG(MINFO) << "{ " << item.second.type
-                << " } key: " << item.first.str()
+    MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
                 << " zmena bola: " << item.second.keyedPath.str();
   }
-
 }
 
 TEST_F(DatastoreTest, diffAfterWrite) {

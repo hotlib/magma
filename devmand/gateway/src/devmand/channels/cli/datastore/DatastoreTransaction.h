@@ -9,9 +9,9 @@
 
 #include <devmand/channels/cli/datastore/DatastoreDiff.h>
 #include <devmand/channels/cli/datastore/DatastoreState.h>
+#include <devmand/devices/cli/schema/BindingContext.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
 #include <devmand/devices/cli/schema/Path.h>
-#include <devmand/devices/cli/schema/BindingContext.h>
 #include <folly/dynamic.h>
 #include <folly/json.h>
 #include <libyang/libyang.h>
@@ -25,6 +25,7 @@ using devmand::channels::cli::datastore::DatastoreState;
 using devmand::devices::cli::Model;
 using devmand::devices::cli::ModelRegistry;
 using devmand::devices::cli::Path;
+using devmand::devices::cli::SchemaContext;
 using folly::dynamic;
 using folly::Optional;
 using folly::parseJson;
@@ -38,7 +39,6 @@ using std::shared_ptr;
 using std::string;
 using std::vector;
 using ydk::Entity;
-using devmand::devices::cli::SchemaContext;
 
 namespace devmand::channels::cli::datastore {
 
@@ -93,15 +93,18 @@ class DatastoreTransaction {
   dynamic read(Path path, lllyd_node* node);
   dynamic readAlreadyCommitted(Path path);
   map<Path, DatastoreDiff> diff(lllyd_node* a, lllyd_node* b);
+  string appendKey(dynamic data, string path);
   void filterMap(vector<string> moduleNames, map<Path, DatastoreDiff>& map);
   void freeRoot();
   void freeRoot(lllyd_node* r);
   llly_set* findNode(lllyd_node* node, string path);
 
  public:
-    map<Path, DatastoreDiff> diff();
+  map<Path, DatastoreDiff> diff();
 
-    DatastoreTransaction(shared_ptr<DatastoreState> datastoreState, SchemaContext& _schemaContext);
+  DatastoreTransaction(
+      shared_ptr<DatastoreState> datastoreState,
+      SchemaContext& _schemaContext);
   dynamic read(Path path);
   void print();
   DiffResult diff(vector<DiffPath> registeredPaths);
