@@ -17,6 +17,40 @@ string statePath =
     "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state";
 string counterPath = statePath + "/counters";
 
+string simpleCreateInterface = "{\n"
+                               "/openconfig-interfaces:interfaces\n"
+                               "            {\n"
+                               "                \"openconfig-interfaces:interfaces\": {\n"
+                               "                    \"interface\": [\n"
+                               "                        {\n"
+                               "                            \"state\": {\n"
+                               "                                \"name\": \"0/1\",\n"
+                               "                                \"counters\": {\n"
+                               "                                    \"out-octets\": 662648417\n"
+                               "                                }\n"
+                               "                            },\n"
+                               "                            \"config\": {\n"
+                               "                                \"name\": \"0/1\"\n"
+                               "                            },\n"
+                               "                            \"name\": \"0/1\"\n"
+                               "                        },\n"
+                               "                        {\n"
+                               "                            \"state\": {\n"
+                               "                                \"name\": \"0/2\",\n"
+                               "                                \"counters\": {\n"
+                               "                                    \"out-octets\": 662648417\n"
+                               "                                }\n"
+                               "                            },\n"
+                               "                            \"config\": {\n"
+                               "                                \"name\": \"0/2\"\n"
+                               "                            },\n"
+                               "                            \"name\": \"0/2\"\n"
+                               "                        }\n"
+                               "                    ]\n"
+                               "                }\n"
+                               "            }";
+
+
 string simpleInterfaces =
     "{\n"
     "  \"openconfig-interfaces:interfaces\": {\n"

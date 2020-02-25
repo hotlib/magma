@@ -42,6 +42,7 @@ using devmand::channels::cli::datastore::DatastoreTransaction;
 using devmand::channels::cli::datastore::DiffPath;
 using devmand::devices::cli::BindingCodec;
 using devmand::devices::cli::SchemaContext;
+using devmand::test::utils::cli::simpleCreateInterface;
 using devmand::test::utils::cli::counterPath;
 using devmand::test::utils::cli::ifaces02;
 using devmand::test::utils::cli::interface02state;
@@ -610,6 +611,53 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
         itr->second.keyedPath.str());
   }
 }
+
+        TEST_F(DatastoreTest, simpleCreateDiff) {
+            Datastore datastore(Datastore::operational(), schemaContext);
+            unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+                    datastore.newTx();
+            transaction->overwrite(Path("/"), parseJson(simpleInterfaces));
+
+            vector<DiffPath> paths;
+            Path p1(statePath);
+            Path p2(counterPath);
+            paths.emplace_back(p1, false);
+            paths.emplace_back(p2, false);
+
+            const std::multimap<Path, DatastoreDiff>& diffs =
+                    transaction->diff(paths).diffs;
+
+            auto it = diffs.equal_range(counterPath.c_str());
+
+            string handledCounterPath01 = "/openconfig-interfaces:interfaces/interface[name='0/1']/state/counters";
+            string handledCounterPath02 = "/openconfig-interfaces:interfaces/interface[name='0/2']/state/counters";
+            for (auto itr = it.first; itr != it.second; ++itr) {
+                EXPECT_EQ(counterPath, itr->first.str());
+                EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+                if(handledCounterPath01 == itr->second.keyedPath.str()){
+                EXPECT_EQ(handledCounterPath01, itr->second.keyedPath.str());
+                } else{
+                    EXPECT_EQ(handledCounterPath02, itr->second.keyedPath.str());
+
+                }
+            }
+
+            string handledStatePath01 =  "/openconfig-interfaces:interfaces/interface[name='0/1']/state";
+            string handledStatePath02 =  "/openconfig-interfaces:interfaces/interface[name='0/2']/state";
+
+            it = diffs.equal_range(statePath.c_str());
+
+            for (auto itr = it.first; itr != it.second; ++itr) {
+                EXPECT_EQ(statePath, itr->first.str());
+                EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+                if(handledStatePath01 == itr->second.keyedPath.str()){
+                    EXPECT_EQ(handledStatePath01, itr->second.keyedPath.str());
+                } else{
+                    EXPECT_EQ(handledStatePath02, itr->second.keyedPath.str());
+
+                }
+            }
+        }
 
 TEST_F(DatastoreTest, diffDeleteOperation) {
   Datastore datastore(Datastore::operational(), schemaContext);

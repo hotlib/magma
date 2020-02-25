@@ -225,9 +225,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   lllyd_node* a = datastoreState->root;
   lllyd_node* b = root;
 
-  // create/delete root elementu => datastoreState->root alebo root budu NULL
-  if (b == nullptr) { // todo toto je delete rootu (este chyba create)
-    Path rootPath = Path("/" + string(datastoreState->root->schema->name));
+  // this covers the case when root has been completely deleted
+  if (b == nullptr) {
+    Path rootPath = Path("/" +  string(datastoreState->root->schema->module->name) + ":" + string(datastoreState->root->schema->name));
     DatastoreDiff datastoreDiff(
         readAlreadyCommitted(rootPath),
         dynamic::object(),
@@ -236,6 +236,18 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
     allDiffs.emplace(rootPath, datastoreDiff);
     return allDiffs;
   }
+
+    // this covers the case when root was created for the first time (i.e. datastoreState is empty)
+    if (a == nullptr) {
+        Path rootPath = Path("/" +  string(root->schema->module->name) + ":" + string(root->schema->name));
+        DatastoreDiff datastoreDiff(
+                dynamic::object(),
+                read(rootPath),
+                DatastoreDiffType::create,
+                rootPath);
+        allDiffs.emplace(rootPath, datastoreDiff);
+        return allDiffs;
+    }
 
   vector<string> previousModuleNames;
   while (a != nullptr && b != nullptr) {
@@ -366,7 +378,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
   if (type == DatastoreDiffType::create) {
     for (auto registeredPath : paths) {
       if (registeredPath.path.isChildOf(path) &&
-          registeredPath.path.getDepth() >= path.getDepth()) {
+          registeredPath.path.getDepth() == path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
       }
@@ -637,18 +649,13 @@ void DatastoreTransaction::splitToMany(
   //    MLOG(MINFO) << "bol som zavolany s : " << p.str()
   //                << " a data: " << toPrettyJson(input);
 
-  if (p.str() != "/reallyempty") {
     result.emplace_back(
         std::make_pair(p.str(), input)); // adding the whole object under the
                                          // name like interface[name='0/1']
-  }
 
   for (const auto& item : input.items()) {
     if (item.second.isArray() || item.second.isObject()) {
       string currentPath = p.str();
-      //      if (p.unkeyed().getLastSegment() !=
-      //          item.first.asString()) { // TODO skip last overlapping segment
-      //          name
 
       //      MLOG(MINFO) << "idem spracovat: " << currentPath
       //                  << " nazov kluca je: " << item.first.c_str();
@@ -683,7 +690,6 @@ void DatastoreTransaction::splitToMany(
         result.emplace_back(std::make_pair(currentPath, input));
         splitToMany(Path(currentPath), item.second, result);
       }
-      //}
     }
   }
 }
@@ -717,7 +723,9 @@ DiffResult DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
   DiffResult result;
   std::set<Path> alreadyProcessedDiff;
   const map<Path, DatastoreDiff>& diffs = diff();
-  for (const auto& diffItem : diffs) { // take libyang diffs
+    MLOG(MINFO) << "velkost POVODNE DIFFS: " << diffs.size();
+
+    for (const auto& diffItem : diffs) { // take libyang diffs
     const map<Path, DatastoreDiff>& smallerDiffs =
         splitDiff(diffItem.second); // split them to smaller ones
     for (const auto& smallerDiffsItem :
@@ -769,11 +777,8 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   map<Path, DatastoreDiff> diffs;
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
-    const Path& pathToSend = diff.keyedPath.getDepth() == 1
-        ? Path("/reallyempty")
-        : diff.keyedPath; // TODO fake top level element marker
     splitToMany(
-        pathToSend,
+            diff.keyedPath,
         diff.after,
         split); // TODO neposielam ked je top level diff.keyedPath
     for (const auto& s : split) {
@@ -783,10 +788,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
     }
     return diffs;
   } else if (diff.type == DatastoreDiffType::deleted) {
-    const Path& pathToSend = diff.keyedPath.getDepth() == 1
-        ? Path("/reallyempty")
-        : diff.keyedPath; // TODO fake top level element marker
-    splitToMany(pathToSend, diff.before, split);
+    splitToMany(diff.keyedPath, diff.before, split);
     for (const auto& s : split) {
       diffs.emplace(
           s.first,

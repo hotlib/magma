@@ -140,9 +140,17 @@ bool Path::isChildOf(const Path& parent) const {
       parentSegments.begin(),
       parentSegments.end());
 
-  return result ||
-      thisSegments.back() ==
-      parentSegments.back(); // thisSegments.size() == parentSegments.size()
+   bool result2 = result
+            ||
+          ("openconfig-interfaces:"+thisSegments.back()) == parentSegments.back()
+          ||
+          thisSegments.back() == parentSegments.back()
+            ||
+          ("openconfig-interfaces:"+thisSegments.back()) == ("openconfig-interfaces:"+parentSegments.back())
+            ||
+          ("openconfig-interfaces:"+thisSegments.back()) == ("openconfig-interfaces:"+parentSegments.back());
+
+        return result2;
 }
 
 const Path Path::getParent() const {
