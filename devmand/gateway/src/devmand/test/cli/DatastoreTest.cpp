@@ -312,10 +312,11 @@ TEST_F(DatastoreTest, changeLeafDiff) {
   const std::multimap<Path, DatastoreDiff>& multimap =
       transaction->diff(paths).diffs;
 
-//              for (const auto& item : multimap) {
-//    MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
-//                << " zmena bola: " << item.second.keyedPath.str();
-//  }
+  //              for (const auto& item : multimap) {
+  //    MLOG(MINFO) << "{ " << item.second.type << " } key: " <<
+  //    item.first.str()
+  //                << " zmena bola: " << item.second.keyedPath.str();
+  //  }
   EXPECT_EQ(
       multimap.begin()->first.str(),
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters");
@@ -407,14 +408,13 @@ TEST_F(DatastoreTest, deleteSubtreeDiff2) {
   const std::multimap<Path, DatastoreDiff>& diffs =
       transaction->diff(paths).diffs;
 
-            EXPECT_EQ(
-                    diffs.begin()->first.str(),
-                    "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
-            EXPECT_EQ(
-                    diffs.begin()->second.keyedPath.str(),
-                    "/openconfig-interfaces:interfaces/interface[name='0/1']/config");
-            EXPECT_EQ(diffs.size(), 2);
-
+  EXPECT_EQ(
+      diffs.begin()->first.str(),
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
+  EXPECT_EQ(
+      diffs.begin()->second.keyedPath.str(),
+      "/openconfig-interfaces:interfaces/interface[name='0/1']/config");
+  EXPECT_EQ(diffs.size(), 2);
 
   for (const auto& item : diffs) {
     MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
@@ -569,9 +569,11 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
              ["in-errors"] = 7;
   interface02["openconfig-interfaces:interface"][0]["state"]["admin-status"] =
       "DOWN";
-  interface02["openconfig-interfaces:interface"][0]["config"] = folly::dynamic::object();
+  interface02["openconfig-interfaces:interface"][0]["config"] =
+      folly::dynamic::object();
   interface02["openconfig-interfaces:interface"][0]["config"]["mtu"] = 1400;
-  interface02["openconfig-interfaces:interface"][0]["config"]["enabled"] = false;
+  interface02["openconfig-interfaces:interface"][0]["config"]["enabled"] =
+      false;
   transaction->merge(interface02TopPath, interface02);
   vector<DiffPath> paths;
   Path p1(statePath);
@@ -582,24 +584,31 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
   const std::multimap<Path, DatastoreDiff>& diffs =
       transaction->diff(paths).diffs;
 
+  //  for (const auto& multi : diffs) {
+  //    MLOG(MINFO) << "key: " << multi.first.str()
+  //                << " handles:  " << multi.second.keyedPath.str()
+  //                << " type: " << multi.second.type;
+  //  }
 
-            for (const auto& multi : diffs) {
-                MLOG(MINFO) << "key: " << multi.first.str()
-                            << " handles:  " << multi.second.keyedPath.str() << " type: " << multi.second.type;
-            }
+  auto it = diffs.equal_range(statePath.c_str());
 
-//  auto it = multimap.equal_range(statePath.c_str());
-//
-//
-//  for (auto itr = it.first; itr != it.second; ++itr) {
-//    EXPECT_EQ(statePath, itr->first.str());
-//    EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
-//    if (itr->second.keyedPath.str() == statePathWithKey) {
-//      EXPECT_EQ(statePathWithKey, itr->second.keyedPath.str());
-//    } else {
-//      EXPECT_EQ(statePathWithKey + "/counters", itr->second.keyedPath.str());
-//    }
-//  }
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(statePath, itr->first.str());
+    EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+    EXPECT_EQ(
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state",
+        itr->second.keyedPath.str());
+  }
+
+  it = diffs.equal_range(counterPath.c_str());
+
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(counterPath, itr->first.str());
+    EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+    EXPECT_EQ(
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/counters",
+        itr->second.keyedPath.str());
+  }
 }
 
 TEST_F(DatastoreTest, diffDeleteOperation) {
@@ -618,9 +627,13 @@ TEST_F(DatastoreTest, diffDeleteOperation) {
   const std::multimap<Path, DatastoreDiff>& diffs =
       transaction->diff(paths).diffs;
 
-            EXPECT_EQ(diffs.begin()->first.str(), "/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
-            EXPECT_EQ(diffs.begin()->second.keyedPath.str(), "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']");
-            EXPECT_EQ(DatastoreDiffType::deleted, diffs.begin()->second.type);
+  EXPECT_EQ(
+      diffs.begin()->first.str(),
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
+  EXPECT_EQ(
+      diffs.begin()->second.keyedPath.str(),
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']");
+  EXPECT_EQ(DatastoreDiffType::deleted, diffs.begin()->second.type);
 }
 
 TEST_F(DatastoreTest, twoIdenpendentTreesDiffUpdateTest) {
@@ -641,7 +654,6 @@ TEST_F(DatastoreTest, twoIdenpendentTreesDiffUpdateTest) {
 
   const std::multimap<Path, DatastoreDiff>& multimap =
       transaction->diff(paths).diffs;
-
 
   EXPECT_EQ(
       multimap.begin()->first.str(),

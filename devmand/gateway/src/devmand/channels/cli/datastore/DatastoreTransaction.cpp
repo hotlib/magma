@@ -348,31 +348,30 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
     DatastoreDiffType type) {
   vector<DiffPath> result;
 
-  MLOG(MINFO) << "CHANGE: " << path.str();
+  //  MLOG(MINFO) << "CHANGE: " << path.str();
 
   if (type == DatastoreDiffType::deleted) {
     for (auto registeredPath : paths) {
       // MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
       // registeredPath.path.isChildOf(path) << " registeredPath: " <<
       // registeredPath.path.str()  << " changed path: " << path;
-      if (registeredPath.path.isChildOf(path) && registeredPath.path.getDepth() <= path.getDepth()) {
+      if (registeredPath.path.isChildOf(path) &&
+          registeredPath.path.getDepth() <= path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
       }
     }
   }
 
-  //TODO dokoncit
-//    if (type == DatastoreDiffType::create) {
-//        for (auto registeredPath : paths) {
-//             MLOG(MINFO) << " registeredPath: " << registeredPath.path.str()  << " changed path: " << path;
-//            if (registeredPath.path.isChildOf(path) && registeredPath.path.getDepth() <= path.getDepth()) {
-//                registeredPath.asterix = true; // TODO hack
-//                result.emplace_back(registeredPath);
-//            }
-//        }
-//    }
-
+  if (type == DatastoreDiffType::create) {
+    for (auto registeredPath : paths) {
+      if (registeredPath.path.isChildOf(path) &&
+          registeredPath.path.getDepth() >= path.getDepth()) {
+        registeredPath.asterix = true; // TODO hack
+        result.emplace_back(registeredPath);
+      }
+    }
+  }
 
   unsigned int max = 0;
   DiffPath resultSoFar;
@@ -385,6 +384,8 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
     }
   }
   if (found) {
+    //    MLOG(MINFO) << "pre ZMENU: " << path.str()
+    //                << " bol vybrany: " << resultSoFar.path;
     result.emplace_back(resultSoFar);
   }
 
@@ -633,63 +634,65 @@ void DatastoreTransaction::splitToMany(
     Path p,
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
-     MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " <<
-     toPrettyJson(input);
+  //    MLOG(MINFO) << "bol som zavolany s : " << p.str()
+  //                << " a data: " << toPrettyJson(input);
 
-  if (input.isArray()) {
-    throw DatastoreException("THIS CAN NEVER HAPPEN!!!!!"); // TODO premysliet
-    for (const auto& item : input) {
-      splitToMany(p, item, result);
-    }
-  } else if (input.isObject()) {
+  if (p.str() != "/reallyempty") {
+    result.emplace_back(
+        std::make_pair(p.str(), input)); // adding the whole object under the
+                                         // name like interface[name='0/1']
+  }
 
-    if (p.str() != "/reallyempty") {
-        result.emplace_back(std::make_pair(
-                p.str(), input)); // adding the whole object under the name like interface[name='0/1']
-    }
+  for (const auto& item : input.items()) {
+    if (item.second.isArray() || item.second.isObject()) {
+      string currentPath = p.str();
+      //      if (p.unkeyed().getLastSegment() !=
+      //          item.first.asString()) { // TODO skip last overlapping segment
+      //          name
 
-    for (const auto& item : input.items()) {
-      if (item.second.isArray() || item.second.isObject()) {
-        string currentPath = p.str();
-        if (p.unkeyed().getLastSegment() !=
-            item.first.asString()) { // TODO skip last overlapping segment name
+      //      MLOG(MINFO) << "idem spracovat: " << currentPath
+      //                  << " nazov kluca je: " << item.first.c_str();
 
-          if (p.str() ==
-              "/reallyempty") { // TODO problem s vymazavanim top level elementu
-                                // + musi byt module prefix kvoli key
-                                // resolution!
-            currentPath = string("/") + item.first.c_str();
-          } else {
-            currentPath = p.str() + "/" + item.first.c_str();
-          }
-
-          if (item.second.isArray()) { // if it is a YANG list i.e. dynamic
-                                       // array
-
-            for (unsigned int j = 0; j < item.second.size(); ++j) {
-              dynamic arrayObject =
-                  item.second[j]; // go through the YANG list items
-              string currentListPath =
-                  appendKey(arrayObject, currentPath); // append key to path
-              splitToMany(
-                  Path(currentListPath),
-                  arrayObject,
-                  result); // recursively go into the array item
-            }
-          } else { // a regular object
-              MLOG(MINFO) << "idem pridat: " << currentPath;
-            result.emplace_back(std::make_pair(currentPath, input));
-            splitToMany(Path(currentPath), item.second, result);
-          }
+      if (p.unkeyed().getLastSegment() !=
+          item.first.asString()) { // TODO skip last overlapping segment name
+        if (p.str() ==
+            "/reallyempty") { // TODO problem s vymazavanim top level elementu
+          // + musi byt module prefix kvoli key
+          // resolution!
+          currentPath = string("/") + item.first.c_str();
+        } else {
+          currentPath = p.str() + "/" + item.first.c_str();
         }
       }
+
+      if (item.second.isArray()) { // if it is a YANG list i.e. dynamic
+                                   // array
+
+        for (unsigned int j = 0; j < item.second.size(); ++j) {
+          dynamic arrayObject =
+              item.second[j]; // go through the YANG list items
+          string currentListPath =
+              appendKey(arrayObject, currentPath); // append key to path
+          splitToMany(
+              Path(currentListPath),
+              arrayObject,
+              result); // recursively go into the array item
+        }
+      } else { // a regular object
+        //   MLOG(MINFO) << "idem pridat: " << currentPath;
+        result.emplace_back(std::make_pair(currentPath, input));
+        splitToMany(Path(currentPath), item.second, result);
+      }
+      //}
     }
   }
 }
 
 string DatastoreTransaction::appendKey(dynamic data, string pathToList) {
-  if (schemaContext.isList(Path(pathToList))) { // if it is a list
-    for (const auto& key : schemaContext.getKeys(Path(pathToList))) {
+  //  MLOG(MINFO) << "hladam kluc pre: " << pathToList;
+  Path pathToResolve(pathToList);
+  if (schemaContext.isList(pathToResolve.unkeyed())) { // if it is a list
+    for (const auto& key : schemaContext.getKeys(pathToResolve.unkeyed())) {
       return pathToList + "[" + key + "='" + data[key].asString() +
           "']"; // append key to path
     }
@@ -766,9 +769,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   map<Path, DatastoreDiff> diffs;
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
-      const Path& pathToSend = diff.keyedPath.getDepth() == 1
-                               ? Path("/reallyempty")
-                               : diff.keyedPath; // TODO fake top level element marker
+    const Path& pathToSend = diff.keyedPath.getDepth() == 1
+        ? Path("/reallyempty")
+        : diff.keyedPath; // TODO fake top level element marker
     splitToMany(
         pathToSend,
         diff.after,

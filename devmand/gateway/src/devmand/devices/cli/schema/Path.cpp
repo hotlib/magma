@@ -131,19 +131,19 @@ u_long Path::getDepth() const {
 
 // TODO just a heuristic, proper implementation needed (can handle module prefix
 // in segments and stuff)
-    bool Path::isChildOf(const Path& parent) const {
-        auto thisSegments = unkeyed().getSegments();
-        auto parentSegments = parent.unkeyed().getSegments();
-        bool result = includes(
-                thisSegments.begin(),
-                thisSegments.end(),
-                parentSegments.begin(),
-                parentSegments.end());
+bool Path::isChildOf(const Path& parent) const {
+  auto thisSegments = unkeyed().getSegments();
+  auto parentSegments = parent.unkeyed().getSegments();
+  bool result = includes(
+      thisSegments.begin(),
+      thisSegments.end(),
+      parentSegments.begin(),
+      parentSegments.end());
 
-        return result || thisSegments.back() == parentSegments.back(); //thisSegments.size() == parentSegments.size()
-    }
-
-
+  return result ||
+      thisSegments.back() ==
+      parentSegments.back(); // thisSegments.size() == parentSegments.size()
+}
 
 const Path Path::getParent() const {
   if (ROOT == *this) {
