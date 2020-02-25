@@ -31,7 +31,6 @@ bool DatastoreTransaction::delete_(Path p) {
     freeRoot();
     return true;
   }
-
   lllyd_node* tmp = root;
   lllyd_node* next = nullptr;
   llly_set* pSet = nullptr;
@@ -49,11 +48,15 @@ bool DatastoreTransaction::delete_(Path p) {
   } else {
     MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   }
-  for (unsigned int j = 0; j < pSet->number; ++j) {
+
+
+    for (unsigned int j = 0; j < pSet->number; ++j) {
     freeRoot(pSet->set.d[j]);
   }
-  llly_set_free(pSet);
-  return true;
+
+    llly_set_free(pSet);
+
+    return true;
 }
 
 void DatastoreTransaction::overwrite(Path path, const dynamic& aDynamic) {
@@ -807,7 +810,9 @@ void DatastoreTransaction::freeRoot() {
 
 void DatastoreTransaction::freeRoot(lllyd_node* r) {
   lllyd_node* next = nullptr;
-  while (r != nullptr) {
+    MLOG(MINFO) << "az sem som sa dostal"; //nejaky problem
+
+    while (r != nullptr) {
     next = r->next;
     r->next = nullptr;
     lllyd_free(r);

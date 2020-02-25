@@ -382,7 +382,7 @@ TEST_F(DatastoreTest, deleteSubtreeDiff) {
           ->second.after["openconfig-interfaces:interface"][0]["state"]);
 }
 
-TEST_F(DatastoreTest, deleteSubtreeDiff2) {
+TEST_F(DatastoreTest, deleteSubtreeDiffNotifyChildren) {
   Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
@@ -392,15 +392,6 @@ TEST_F(DatastoreTest, deleteSubtreeDiff2) {
   transaction = datastore.newTx();
   transaction->delete_("/openconfig-interfaces:interfaces");
 
-  //            map<Path, DatastoreDiff> changes = transaction->diff();
-  //
-  //            MLOG(MINFO) << "changes: " << changes.size();
-  //            for (const auto &change : changes) {
-  //                MLOG(MINFO) << "key: " << change.first.str() << " keydPath:
-  //                " << change.second.keyedPath.str()
-  //                << " before data: " << toPrettyJson(change.second.before);
-  //            }
-  //
   vector<DiffPath> paths;
   Path p1(
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
@@ -422,6 +413,33 @@ TEST_F(DatastoreTest, deleteSubtreeDiff2) {
                 << " zmena bola: " << item.second.keyedPath.str();
   }
 }
+
+
+        TEST_F(DatastoreTest, deleteSubtreeDiffNotifyParent) {
+            Datastore datastore(Datastore::operational(), schemaContext);
+            unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+                    datastore.newTx();
+            transaction->overwrite(Path("/"), parseJson(simpleInterfaces));
+
+            transaction->commit();
+            transaction = datastore.newTx();
+            transaction->delete_(Path("/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/1']/openconfig-interfaces:state/openconfig-interfaces:counters"));
+//
+//            vector<DiffPath> paths;
+//            Path p1(statePath);
+//            paths.emplace_back(p1, false);
+//
+//            const std::multimap<Path, DatastoreDiff>& diffs =
+//                    transaction->diff(paths).diffs;
+//
+//            for (const auto& item : diffs) {
+//                MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
+//                            << " zmena bola: " << item.second.keyedPath.str();
+//            }
+        }
+
+
+
 
 TEST_F(DatastoreTest, diffAfterWrite) {
   Datastore datastore(Datastore::operational(), schemaContext);
