@@ -348,17 +348,31 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
     DatastoreDiffType type) {
   vector<DiffPath> result;
 
+  MLOG(MINFO) << "CHANGE: " << path.str();
+
   if (type == DatastoreDiffType::deleted) {
     for (auto registeredPath : paths) {
       // MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
       // registeredPath.path.isChildOf(path) << " registeredPath: " <<
       // registeredPath.path.str()  << " changed path: " << path;
-      if (registeredPath.path.isChildOf(path)) {
+      if (registeredPath.path.isChildOf(path) && registeredPath.path.getDepth() <= path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
       }
     }
   }
+
+  //TODO dokoncit
+//    if (type == DatastoreDiffType::create) {
+//        for (auto registeredPath : paths) {
+//             MLOG(MINFO) << " registeredPath: " << registeredPath.path.str()  << " changed path: " << path;
+//            if (registeredPath.path.isChildOf(path) && registeredPath.path.getDepth() <= path.getDepth()) {
+//                registeredPath.asterix = true; // TODO hack
+//                result.emplace_back(registeredPath);
+//            }
+//        }
+//    }
+
 
   unsigned int max = 0;
   DiffPath resultSoFar;
@@ -619,8 +633,8 @@ void DatastoreTransaction::splitToMany(
     Path p,
     dynamic input,
     vector<std::pair<string, dynamic>>& result) {
-  //   MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " <<
-  //   toPrettyJson(input);
+     MLOG(MINFO) << "bol som zavolany s : " << p.str() << " a data: " <<
+     toPrettyJson(input);
 
   if (input.isArray()) {
     throw DatastoreException("THIS CAN NEVER HAPPEN!!!!!"); // TODO premysliet
@@ -631,7 +645,7 @@ void DatastoreTransaction::splitToMany(
 
     if (p.str() != "/reallyempty") {
         result.emplace_back(std::make_pair(
-                p.str(), input)); // adding the whole object under the name
+                p.str(), input)); // adding the whole object under the name like interface[name='0/1']
     }
 
     for (const auto& item : input.items()) {
@@ -663,7 +677,7 @@ void DatastoreTransaction::splitToMany(
                   result); // recursively go into the array item
             }
           } else { // a regular object
-            MLOG(MINFO) << "idem vlozit " << currentPath;
+              MLOG(MINFO) << "idem pridat: " << currentPath;
             result.emplace_back(std::make_pair(currentPath, input));
             splitToMany(Path(currentPath), item.second, result);
           }
@@ -752,9 +766,9 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   map<Path, DatastoreDiff> diffs;
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
-    const Path& pathToSend =
-        diff.keyedPath.getDepth() == 1 ? "" : diff.keyedPath;
-    MLOG(MINFO) << "idem poslat: " << pathToSend;
+      const Path& pathToSend = diff.keyedPath.getDepth() == 1
+                               ? Path("/reallyempty")
+                               : diff.keyedPath; // TODO fake top level element marker
     splitToMany(
         pathToSend,
         diff.after,
