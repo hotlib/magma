@@ -51,7 +51,8 @@ bool DatastoreTransaction::delete_(Path p) {
 
 
     for (unsigned int j = 0; j < pSet->number; ++j) {
-    freeRoot(pSet->set.d[j]);
+        lllyd_free(pSet->set.d[j]);
+    //freeRoot(pSet->set.d[j]); //TODO hmmm which one
   }
 
     llly_set_free(pSet);
@@ -363,19 +364,25 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
     DatastoreDiffType type) {
   vector<DiffPath> result;
 
-  //  MLOG(MINFO) << "CHANGE: " << path.str();
+   // MLOG(MINFO) << "CHANGE: " << path.str();
 
   if (type == DatastoreDiffType::deleted) {
     for (auto registeredPath : paths) {
-      // MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
-      // registeredPath.path.isChildOf(path) << " registeredPath: " <<
-      // registeredPath.path.str()  << " changed path: " << path;
-      if (registeredPath.path.isChildOf(path) &&
+//       MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
+//       registeredPath.path.isChildOf(path) << " registeredPath: " <<
+//       registeredPath.path.str()  << " changed path: " << path;
+//      if (registeredPath.path.isChildOf(path) &&
+//          registeredPath.path.getDepth() <= path.getDepth()) {
+       if (registeredPath.path.isChildOf(path) &&
           registeredPath.path.getDepth() <= path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
+//          MLOG(MINFO)  << " pridavam registeredPath: " <<
+//                      registeredPath.path.str()  << " ako odpoved na zmenu : " << path;
       }
     }
+
+    return result;
   }
 
   if (type == DatastoreDiffType::create) {
@@ -386,6 +393,8 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
         result.emplace_back(registeredPath);
       }
     }
+
+    return result;
   }
 
   unsigned int max = 0;
@@ -475,49 +484,6 @@ string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
   }
   return buildFullPath(node->parent, path.str());
 }
-
-// TODO toto je len tak
-//    string DatastoreTransaction::appendToPath(lllyd_node* node, string
-//    pathSoFar) {
-//
-//        llly_set* pSet = findNode(node, pathSoFar);
-//
-//        if (pSet == nullptr) {
-//            return nullptr;
-//        }
-//
-//        if (pSet->number == 0) {
-//            llly_set_free(pSet);
-//            return nullptr;
-//        }
-//
-//        if (pSet->number > 1) {
-//            llly_set_free(pSet);
-//
-//            DatastoreException ex(
-//                    "Too many results from path: " + path.str() +
-//                    " , query must target a unique element");
-//            MLOG(MWARNING) << ex.what();
-//            throw ex;
-//        }
-//
-//        const string& json = toJson(pSet->set.d[0]);
-//        llly_set_free(pSet);
-//        return parseJson(json);
-//
-//
-//
-//        std::stringstream path;
-//        path << "/" << node->schema->module->name << ":" <<
-//        node->schema->name; if (node->schema->nodetype == LLLYS_LIST) {
-//            addKeysToPath(node, path);
-//        }
-//        path << pathSoFar;
-//        if (node->parent == nullptr) {
-//            return path.str();
-//        }
-//        return buildFullPath(node->parent, path.str());
-//    }
 
 void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
   switch (type) {
@@ -698,8 +664,13 @@ void DatastoreTransaction::splitToMany(
 }
 
 string DatastoreTransaction::appendKey(dynamic data, string pathToList) {
-  //  MLOG(MINFO) << "hladam kluc pre: " << pathToList;
+  //MLOG(MINFO) << "hladam kluc pre: " << pathToList;
   Path pathToResolve(pathToList);
+  //if the last segment already contains a key, don't append it again
+  //TODO a better if check for key needed
+  if(pathToResolve.unkeyed().getLastSegment() != pathToResolve.getLastSegment()){
+      return pathToList;
+  }
   if (schemaContext.isList(pathToResolve.unkeyed())) { // if it is a list
     for (const auto& key : schemaContext.getKeys(pathToResolve.unkeyed())) {
       return pathToList + "[" + key + "='" + data[key].asString() +
@@ -726,7 +697,7 @@ DiffResult DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
   DiffResult result;
   std::set<Path> alreadyProcessedDiff;
   const map<Path, DatastoreDiff>& diffs = diff();
-    MLOG(MINFO) << "velkost POVODNE DIFFS: " << diffs.size();
+//    MLOG(MINFO) << "velkost POVODNE DIFFS: " << diffs.size();
 
     for (const auto& diffItem : diffs) { // take libyang diffs
     const map<Path, DatastoreDiff>& smallerDiffs =
@@ -735,7 +706,7 @@ DiffResult DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
          smallerDiffs) { // map the smaller ones to their registered path
       vector<Path> registeredPathsToNotify = getRegisteredPath(
           registeredPaths,
-          smallerDiffsItem.first,
+          smallerDiffsItem.second.keyedPath,
           smallerDiffsItem.second.type);
 
       if (registeredPathsToNotify.empty()) {
@@ -799,6 +770,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
     }
     return diffs;
   }
+
   diffs.emplace(diff.path, diff);
   return diffs;
 }
@@ -810,15 +782,14 @@ void DatastoreTransaction::freeRoot() {
 
 void DatastoreTransaction::freeRoot(lllyd_node* r) {
   lllyd_node* next = nullptr;
-    MLOG(MINFO) << "az sem som sa dostal"; //nejaky problem
 
     while (r != nullptr) {
-    next = r->next;
-    r->next = nullptr;
-    lllyd_free(r);
-    r->next = next;
-    r = r->next;
+        next = r->next;
+        r->next = nullptr;
+        lllyd_free(r);
+        r = next;
   }
+
 }
 
 llly_set* DatastoreTransaction::findNode(lllyd_node* node, string path) {
@@ -834,9 +805,5 @@ llly_set* DatastoreTransaction::findNode(lllyd_node* node, string path) {
 
   return pSet;
 }
-
-//    lllyd_node * DatastoreTransaction::find(dynamic entity) {
-//        return nullptr;
-//    }
 
 } // namespace devmand::channels::cli::datastore

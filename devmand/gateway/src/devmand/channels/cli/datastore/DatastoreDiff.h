@@ -23,6 +23,9 @@ struct DatastoreDiff {
   const Path keyedPath;
   const Path path;
 
+  string toText(){
+      return string("change on keyedpath: ") + keyedPath.str();
+  }
   DatastoreDiff(
       const dynamic& _before,
       const dynamic& _after,
