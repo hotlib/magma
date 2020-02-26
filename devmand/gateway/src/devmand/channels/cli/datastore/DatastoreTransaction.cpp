@@ -23,7 +23,7 @@ bool DatastoreTransaction::delete_(Path p) {
   checkIfCommitted();
   string path = p.str();
   //TODO iterate over root
-  if (path.empty() || datastoreState->getRoot("root") == nullptr) {
+  if (path.empty() || datastoreState->getTransactionRoot("root") == nullptr) {
     return false;
   }
 
@@ -47,10 +47,10 @@ bool DatastoreTransaction::delete_(Path p) {
 //  }
 
   if (pSet == nullptr) {
-    MLOG(MDEBUG) << "Nothing to delete, " + path + " not found";
+    MLOG(MINFO) << "Nothing to delete, " + path + " not found";
     return false;
   } else {
-    MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
+    MLOG(MINFO) << "Deleting " << pSet->number << " subtrees";
   }
 
 

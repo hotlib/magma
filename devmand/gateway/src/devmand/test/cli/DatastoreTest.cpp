@@ -205,6 +205,7 @@ TEST_F(DatastoreTest, deleteSubtrees) {
       "/openconfig-interfaces:interfaces/interface[name='0/3']";
   EXPECT_TRUE(transaction->read(interface03) != nullptr);
   transaction->delete_(interface03);
+  transaction->print();
   EXPECT_TRUE(toPrettyJson(transaction->read(interface03)) == "{}");
 
   transaction->abort();
