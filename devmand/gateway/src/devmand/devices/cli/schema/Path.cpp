@@ -112,6 +112,64 @@ const Path Path::prefixAllSegments() const {
   return Path(newPath.str());
 }
 
+const Path Path::unprefixAllSegments() const {
+  if (ROOT == *this) {
+    return ROOT;
+  }
+
+  vector<string> unkeyedSegments = unkeyed().getSegments();
+
+  string pathCopy = path;
+  stringstream newPath;
+  newPath << PATH_SEPARATOR;
+
+  for (unsigned int i = 0; i < unkeyedSegments.size(); ++i) {
+    smatch match;
+    if (regex_match(unkeyedSegments[i], match, PREFIXED_SEGMENT)) {
+      newPath << match[2];
+    } else {
+      newPath << unkeyedSegments[i];
+    }
+
+    if (i == unkeyedSegments.size() - 1) {
+      newPath << pathCopy.substr(unkeyedSegments[i].length() + 1);
+      break;
+    }
+
+    pathCopy = pathCopy.substr(unkeyedSegments[i].length() + 1);
+
+    unsigned long nextSegmentStart =
+        pathCopy.find(PATH_SEPARATOR + unkeyedSegments[i + 1]);
+    newPath << pathCopy.substr(0, nextSegmentStart) << PATH_SEPARATOR;
+
+    pathCopy = pathCopy.substr(nextSegmentStart);
+  }
+
+  return Path(newPath.str());
+}
+
+bool Path::isChildOfUnprefixed(const Path& parent) const {
+  return unprefixAllSegments().isChildOf(parent.unprefixAllSegments());
+}
+
+bool Path::isLastSegmentKeyed() const {
+  if (ROOT == *this) {
+    return false;
+  }
+  return unkeyed().getLastSegment() != getLastSegment();
+}
+
+Optional<string> Path::getFirstModuleName() const {
+  vector<string> segments = getSegments();
+  for (unsigned int i = 0; i < segments.size(); ++i) {
+    smatch match;
+    if (regex_match(segments[i], match, PREFIXED_SEGMENT)) {
+      return Optional<string>(match[1]);
+    }
+  }
+  return none;
+}
+
 static const auto KEYS_IN_PATH = regex("\\[([^\\]]+)\\]");
 
 const Path Path::unkeyed() const {
@@ -129,28 +187,14 @@ u_long Path::getDepth() const {
   return unkeyed().getSegments().size();
 }
 
-// TODO just a heuristic, proper implementation needed (can handle module prefix
-// in segments and stuff)
 bool Path::isChildOf(const Path& parent) const {
   auto thisSegments = unkeyed().getSegments();
   auto parentSegments = parent.unkeyed().getSegments();
-  bool result = includes(
+  return includes(
       thisSegments.begin(),
       thisSegments.end(),
       parentSegments.begin(),
       parentSegments.end());
-
-   bool result2 = result
-            ||
-          ("openconfig-interfaces:"+thisSegments.back()) == parentSegments.back()
-          ||
-          thisSegments.back() == parentSegments.back()
-            ||
-          ("openconfig-interfaces:"+thisSegments.back()) == ("openconfig-interfaces:"+parentSegments.back())
-            ||
-          ("openconfig-interfaces:"+thisSegments.back()) == ("openconfig-interfaces:"+parentSegments.back());
-
-        return result2;
 }
 
 const Path Path::getParent() const {

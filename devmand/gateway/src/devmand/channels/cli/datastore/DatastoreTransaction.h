@@ -72,6 +72,7 @@ class DatastoreTransaction {
   lllyd_node* dynamic2lydNode(dynamic entity);
   static lllyd_node*
   getExistingNode(lllyd_node* a, lllyd_node* b, DatastoreDiffType type);
+  static vector<LydPair> splitNodeToRoots(lllyd_node* node);
   static void printDiffType(LLLYD_DIFFTYPE type);
   static string buildFullPath(lllyd_node* node, string pathSoFar);
   static DatastoreDiffType getDiffType(LLLYD_DIFFTYPE type);
@@ -93,9 +94,10 @@ class DatastoreTransaction {
   dynamic read(Path path, lllyd_node* node);
   dynamic readAlreadyCommitted(Path path);
   map<Path, DatastoreDiff> diff(lllyd_node* a, lllyd_node* b);
+  map<Path, DatastoreDiff> libyangDiff(lllyd_node* a, lllyd_node* b);
   string appendKey(dynamic data, string path);
   void filterMap(vector<string> moduleNames, map<Path, DatastoreDiff>& map);
-  //void freeRoot();
+  // void freeRoot();
   void freeRoot(lllyd_node* r);
   llly_set* findNode(lllyd_node* node, string path);
 

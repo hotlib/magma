@@ -22,46 +22,47 @@ using std::map;
 bool DatastoreTransaction::delete_(Path p) {
   checkIfCommitted();
   string path = p.str();
-  //TODO iterate over root
-  if (path.empty() || datastoreState->getTransactionRoot("root") == nullptr) {
+  if (path.empty()) {
+    MLOG(MINFO) << "Nothing to delete for: " << p;
     return false;
   }
 
-  //TODO delete per tree? need a module name at least...
-  if (Path::ROOT == p ||
-      p.getDepth() == 1) { // TODO SOLVE FOR MULTITREE p.getDepth() == 1
-      datastoreState->freeTransactionRoot();
+  if (Path::ROOT == p && !p.getFirstModuleName().hasValue()) {
+    datastoreState->freeTransactionRoot(); // delete all trees
     return true;
   }
 
-//  lllyd_node* tmp = root;
-//  lllyd_node* next = nullptr;
-    //TODO iterate over more than root
-  llly_set* pSet = lllyd_find_path(datastoreState->getTransactionRoot("root"), const_cast<char*>(path.c_str()));
-//  while (tmp != nullptr && pSet == nullptr) {
-//    next = tmp->next;
-//    tmp->next = nullptr;
-//    pSet = ;
-//    tmp->next = next;
-//    tmp = next;
-//  }
+  if (not p.getFirstModuleName().hasValue()) {
+    MLOG(MINFO) << "Unable to delete path without module name in the path: "
+                << p;
+    return false;
+  }
+  string moduleName = p.getFirstModuleName().value();
+
+  if (p.getDepth() == 1) {
+    datastoreState->freeTransactionRoot(moduleName); // delete a specific tree
+  }
+
+  llly_set* pSet = lllyd_find_path(
+      datastoreState->getTransactionRoot(moduleName),
+      const_cast<char*>(path.c_str()));
 
   if (pSet == nullptr) {
-    MLOG(MINFO) << "Nothing to delete, " + path + " not found";
+    MLOG(MINFO) << "Nothing to delete, " + path +
+            " not found for module: " + moduleName;
     return false;
   } else {
     MLOG(MINFO) << "Deleting " << pSet->number << " subtrees";
   }
 
-
-    for (unsigned int j = 0; j < pSet->number; ++j) {
-        lllyd_free(pSet->set.d[j]);
-    //freeRoot(pSet->set.d[j]); //TODO hmmm which one
+  for (unsigned int j = 0; j < pSet->number; ++j) {
+    lllyd_free(pSet->set.d[j]);
+    // freeRoot(pSet->set.d[j]); //TODO hmmm which one
   }
 
-    llly_set_free(pSet);
+  llly_set_free(pSet);
 
-    return true;
+  return true;
 }
 
 void DatastoreTransaction::overwrite(Path path, const dynamic& aDynamic) {
@@ -114,26 +115,33 @@ dynamic DatastoreTransaction::appendAllParents(
   return previous;
 }
 
+vector<LydPair> DatastoreTransaction::splitNodeToRoots(lllyd_node* node) {
+  vector<LydPair> result;
+  lllyd_node* root = computeRoot(node);
+  lllyd_node* next = nullptr; // TODO break 'previous' link as well??
+  do {
+    next = root->next;
+    root->next = nullptr;
+    result.emplace_back(string(root->schema->module->name), root);
+    root = next;
+  } while (root != nullptr);
+
+  return result;
+}
 void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   checkIfCommitted();
   dynamic withParents = appendAllParents(path, aDynamic);
   lllyd_node* pNode = dynamic2lydNode(withParents);
-
- //TODO iterate over root
-  if (datastoreState->getTransactionRoot("root") == nullptr) {
-      datastoreState->setTransactionRoot("root", pNode);
-  } else {
-    lllyd_node* tmp = datastoreState->getTransactionRoot("root");
-    lllyd_merge(tmp, pNode, LLLYD_OPT_DESTRUCT );
-    datastoreState->setTransactionRoot("root", tmp);
-//    while (tmp != nullptr) {
-//      next = tmp->next;
-//      tmp->next = nullptr;
-//
-//      tmp->next = next;
-//      tmp = next;
-//    }
-//    freeRoot(pNode);
+  vector<LydPair> pairsToMerge = splitNodeToRoots(pNode);
+  for (const auto& toMerge : pairsToMerge) {
+    if (datastoreState->getTransactionRoot(toMerge.first) ==
+        nullptr) { // if nothing exists yet
+      datastoreState->setTransactionRoot(toMerge.first, toMerge.second);
+    } else {
+      lllyd_node* tmp = datastoreState->getTransactionRoot(toMerge.first);
+      lllyd_merge(tmp, toMerge.second, LLLYD_OPT_DESTRUCT);
+      datastoreState->setTransactionRoot(toMerge.first, tmp);
+    }
   }
 }
 
@@ -141,15 +149,15 @@ void DatastoreTransaction::commit() {
   checkIfCommitted();
 
   validateBeforeCommit();
-//  lllyd_node* rootToBeMerged = computeRoot(
-//      root); // need the real root for convenience and copy via lllyd_dup
-//  if (!datastoreState->isEmpty()) {
-//
-//    datastoreState->setRoot("root", nullptr);
-//  }
+  //  lllyd_node* rootToBeMerged = computeRoot(
+  //      root); // need the real root for convenience and copy via lllyd_dup
+  //  if (!datastoreState->isEmpty()) {
+  //
+  //    datastoreState->setRoot("root", nullptr);
+  //  }
   datastoreState->freeRoot();
   datastoreState->setRootFromTransaction();
-  //datastoreState->setRoot("root", rootToBeMerged);
+  // datastoreState->setRoot("root", rootToBeMerged);
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
@@ -158,7 +166,7 @@ void DatastoreTransaction::commit() {
 void DatastoreTransaction::abort() {
   checkIfCommitted();
 
-    datastoreState->freeTransactionRoot();
+  datastoreState->freeTransactionRoot();
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
@@ -181,8 +189,10 @@ void DatastoreTransaction::print(lllyd_node* nodeToPrint) {
 }
 
 void DatastoreTransaction::print() {
-    //TODO iterate over root
-  print(datastoreState->getTransactionRoot("root"));
+  for (const auto& rootPair :
+       datastoreState->getRootAndTransactionRootPairs()) {
+    print(rootPair.second);
+  }
 }
 
 string DatastoreTransaction::toJson(lllyd_node* initial) {
@@ -197,18 +207,18 @@ DatastoreTransaction::DatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState,
     SchemaContext& _schemaContext)
     : datastoreState(_datastoreState), schemaContext(_schemaContext) {
-    datastoreState->duplicateForTransaction();
-//  if (not datastoreState->isEmpty()) {
-//    root = lllyd_dup(datastoreState->getRoot("root"), 1);
-//
-//    lllyd_node* tmp = datastoreState->getRoot("root")->next;
-//    lllyd_node* tmpRoot = root;
-//    while (tmp != nullptr) {
-//      tmpRoot->next = lllyd_dup(tmp, 1);
-//      tmpRoot = tmpRoot->next;
-//      tmp = tmp->next;
-//    }
-//  }
+  datastoreState->duplicateForTransaction();
+  //  if (not datastoreState->isEmpty()) {
+  //    root = lllyd_dup(datastoreState->getRoot("root"), 1);
+  //
+  //    lllyd_node* tmp = datastoreState->getRoot("root")->next;
+  //    lllyd_node* tmpRoot = root;
+  //    while (tmp != nullptr) {
+  //      tmpRoot->next = lllyd_dup(tmp, 1);
+  //      tmpRoot = tmpRoot->next;
+  //      tmp = tmp->next;
+  //    }
+  //  }
 }
 
 lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
@@ -236,14 +246,31 @@ void DatastoreTransaction::filterMap(
 
 map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   map<Path, DatastoreDiff> allDiffs;
-  //TODO iterate over more than root
-  lllyd_node* a = datastoreState->getRoot("root");
-  lllyd_node* b = datastoreState->getTransactionRoot("root");
+
+  const vector<RootPair>& pairs =
+      datastoreState->getRootAndTransactionRootPairs();
+
+  for (const auto& pair : pairs) {
+    if (pair.first == nullptr ||
+        pair.second == nullptr) { // can't diff if something is missing
+      continue;
+    }
+    map<Path, DatastoreDiff> diffs = libyangDiff(pair.first, pair.second);
+    allDiffs.insert(diffs.begin(), diffs.end());
+  }
+
+  return allDiffs;
+}
+
+map<Path, DatastoreDiff> DatastoreTransaction::diff(
+    lllyd_node* a,
+    lllyd_node* b) {
+  map<Path, DatastoreDiff> allDiffs;
 
   // this covers the case when root has been completely deleted
   if (b == nullptr) {
-      //TODO iterate over root
-    Path rootPath = Path("/" +  string(datastoreState->getRoot("root")->schema->module->name) + ":" + string(datastoreState->getRoot("root")->schema->name));
+    Path rootPath = Path(
+        "/" + string(a->schema->module->name) + ":" + string(a->schema->name));
     DatastoreDiff datastoreDiff(
         readAlreadyCommitted(rootPath),
         dynamic::object(),
@@ -253,18 +280,16 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
     return allDiffs;
   }
 
-    // this covers the case when root was created for the first time (i.e. datastoreState is empty)
-    if (a == nullptr) {
-        //TODO iterate over root
-        Path rootPath = Path("/" +  string(datastoreState->getTransactionRoot("root")->schema->module->name) + ":" + string(datastoreState->getTransactionRoot("root")->schema->name));
-        DatastoreDiff datastoreDiff(
-                dynamic::object(),
-                read(rootPath),
-                DatastoreDiffType::create,
-                rootPath);
-        allDiffs.emplace(rootPath, datastoreDiff);
-        return allDiffs;
-    }
+  // this covers the case when root was created for the first time (i.e.
+  // datastoreState is empty)
+  if (a == nullptr) {
+    Path rootPath = Path(
+        "/" + string(b->schema->module->name) + ":" + string(b->schema->name));
+    DatastoreDiff datastoreDiff(
+        dynamic::object(), read(rootPath), DatastoreDiffType::create, rootPath);
+    allDiffs.emplace(rootPath, datastoreDiff);
+    return allDiffs;
+  }
 
   vector<string> previousModuleNames;
   while (a != nullptr && b != nullptr) {
@@ -288,15 +313,11 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   return allDiffs;
 }
 
-map<Path, DatastoreDiff> DatastoreTransaction::diff(
+map<Path, DatastoreDiff> DatastoreTransaction::libyangDiff(
     lllyd_node* a,
     lllyd_node* b) {
   checkIfCommitted();
-  if (datastoreState->isEmpty()) {
-    DatastoreException ex("Unable to diff, datastore tree does not yet exist");
-    MLOG(MWARNING) << ex.what();
-    throw ex;
-  }
+
   lllyd_difflist* difflist = lllyd_diff(a, b, LLLYD_DIFFOPT_WITHDEFAULTS);
   if (!difflist) {
     DatastoreException ex("Something went wrong, no diff possible");
@@ -377,21 +398,22 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
     DatastoreDiffType type) {
   vector<DiffPath> result;
 
-   // MLOG(MINFO) << "CHANGE: " << path.str();
+  // MLOG(MINFO) << "CHANGE: " << path.str();
 
   if (type == DatastoreDiffType::deleted) {
     for (auto registeredPath : paths) {
-//       MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
-//       registeredPath.path.isChildOf(path) << " registeredPath: " <<
-//       registeredPath.path.str()  << " changed path: " << path;
-//      if (registeredPath.path.isChildOf(path) &&
-//          registeredPath.path.getDepth() <= path.getDepth()) {
-       if (registeredPath.path.isChildOf(path) &&
+      //       MLOG(MINFO) << "registeredPath.path.isChildOf(path): " <<
+      //       registeredPath.path.isChildOf(path) << " registeredPath: " <<
+      //       registeredPath.path.str()  << " changed path: " << path;
+      //      if (registeredPath.path.isChildOf(path) &&
+      //          registeredPath.path.getDepth() <= path.getDepth()) {
+      if (registeredPath.path.isChildOf(path) &&
           registeredPath.path.getDepth() <= path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
-//          MLOG(MINFO)  << " pridavam registeredPath: " <<
-//                      registeredPath.path.str()  << " ako odpoved na zmenu : " << path;
+        //          MLOG(MINFO)  << " pridavam registeredPath: " <<
+        //                      registeredPath.path.str()  << " ako odpoved na
+        //                      zmenu : " << path;
       }
     }
 
@@ -431,7 +453,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
 DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited) {
-      datastoreState->freeTransactionRoot();
+    datastoreState->freeTransactionRoot();
   }
   datastoreState->transactionUnderway.store(false);
 }
@@ -523,8 +545,13 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
 dynamic DatastoreTransaction::read(Path path) {
   checkIfCommitted();
 
-  //TODO iterate over root
-  const dynamic& aDynamic = read(path, datastoreState->getTransactionRoot("root"));
+  if (not path.getFirstModuleName().hasValue()) {
+    throw DatastoreException(
+        "Unable to determine which tree to update, path with module name needed");
+  }
+  const dynamic& aDynamic = read(
+      path,
+      datastoreState->getTransactionRoot(path.getFirstModuleName().value()));
   if (aDynamic == nullptr) {
     return dynamic::object(); // for diffs we need an empty object
   }
@@ -587,30 +614,36 @@ lllyd_node* DatastoreTransaction::getExistingNode(
 
 bool DatastoreTransaction::isValid() {
   checkIfCommitted();
-  //TODO iterate over root
-  if (datastoreState->getTransactionRoot("root") == nullptr) {
+  if (datastoreState->nothingInTransaction()) {
     DatastoreException ex(
         "Datastore is empty and no changes performed, nothing to validate");
     MLOG(MWARNING) << ex.what();
     throw ex;
   }
 
-  //TODO iterate over more than root
-    lllyd_node *nodeToValidate = datastoreState->getTransactionRoot("root");
-    return lllyd_validate(&nodeToValidate, datastoreTypeToLydOption(), nullptr) == 0;
-//  lllyd_node* tmp = root;
-//  lllyd_node* next = nullptr;
-//  bool isValid = true;
-//  while (tmp != nullptr) {
-//    next = tmp->next;
-//    tmp->next = nullptr;
-//    isValid = isValid &&
-//        (lllyd_validate(&tmp, datastoreTypeToLydOption(), nullptr) == 0);
-//    tmp->next = next;
-//    tmp = next;
-//  }
-//
-//  return isValid;
+  bool isValid = true;
+
+  for (const auto& pair : datastoreState->getRootAndTransactionRootPairs()) {
+    lllyd_node* nodeToValidate = pair.second;
+    isValid = isValid &&
+        (lllyd_validate(&nodeToValidate, datastoreTypeToLydOption(), nullptr) ==
+         0);
+  }
+
+  return isValid;
+  //  lllyd_node* tmp = root;
+  //  lllyd_node* next = nullptr;
+  //  bool isValid = true;
+  //  while (tmp != nullptr) {
+  //    next = tmp->next;
+  //    tmp->next = nullptr;
+  //    isValid = isValid &&
+  //        (lllyd_validate(&tmp, datastoreTypeToLydOption(), nullptr) == 0);
+  //    tmp->next = next;
+  //    tmp = next;
+  //  }
+  //
+  //  return isValid;
 }
 
 int DatastoreTransaction::datastoreTypeToLydOption() {
@@ -637,9 +670,9 @@ void DatastoreTransaction::splitToMany(
   //    MLOG(MINFO) << "bol som zavolany s : " << p.str()
   //                << " a data: " << toPrettyJson(input);
 
-    result.emplace_back(
-        std::make_pair(p.str(), input)); // adding the whole object under the
-                                         // name like interface[name='0/1']
+  result.emplace_back(
+      std::make_pair(p.str(), input)); // adding the whole object under the
+                                       // name like interface[name='0/1']
 
   for (const auto& item : input.items()) {
     if (item.second.isArray() || item.second.isObject()) {
@@ -683,12 +716,13 @@ void DatastoreTransaction::splitToMany(
 }
 
 string DatastoreTransaction::appendKey(dynamic data, string pathToList) {
-  //MLOG(MINFO) << "hladam kluc pre: " << pathToList;
+  // MLOG(MINFO) << "hladam kluc pre: " << pathToList;
   Path pathToResolve(pathToList);
-  //if the last segment already contains a key, don't append it again
-  //TODO a better if check for key needed
-  if(pathToResolve.unkeyed().getLastSegment() != pathToResolve.getLastSegment()){
-      return pathToList;
+  // if the last segment already contains a key, don't append it again
+  // TODO a better if check for key needed
+  if (pathToResolve.unkeyed().getLastSegment() !=
+      pathToResolve.getLastSegment()) {
+    return pathToList;
   }
   if (schemaContext.isList(pathToResolve.unkeyed())) { // if it is a list
     for (const auto& key : schemaContext.getKeys(pathToResolve.unkeyed())) {
@@ -716,9 +750,9 @@ DiffResult DatastoreTransaction::diff(vector<DiffPath> registeredPaths) {
   DiffResult result;
   std::set<Path> alreadyProcessedDiff;
   const map<Path, DatastoreDiff>& diffs = diff();
-//    MLOG(MINFO) << "velkost POVODNE DIFFS: " << diffs.size();
+  // MLOG(MINFO) << "velkost POVODNE DIFFS: " << diffs.size();
 
-    for (const auto& diffItem : diffs) { // take libyang diffs
+  for (const auto& diffItem : diffs) { // take libyang diffs
     const map<Path, DatastoreDiff>& smallerDiffs =
         splitDiff(diffItem.second); // split them to smaller ones
     for (const auto& smallerDiffsItem :
@@ -771,7 +805,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   vector<std::pair<string, dynamic>> split;
   if (diff.type == DatastoreDiffType::create) {
     splitToMany(
-            diff.keyedPath,
+        diff.keyedPath,
         diff.after,
         split); // TODO neposielam ked je top level diff.keyedPath
     for (const auto& s : split) {
@@ -794,7 +828,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   return diffs;
 }
 
-//void DatastoreTransaction::freeRoot() {
+// void DatastoreTransaction::freeRoot() {
 //  freeRoot(root);
 //  root = nullptr;
 //}
@@ -802,13 +836,12 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
 void DatastoreTransaction::freeRoot(lllyd_node* r) {
   lllyd_node* next = nullptr;
 
-    while (r != nullptr) {
-        next = r->next;
-        r->next = nullptr;
-        lllyd_free(r);
-        r = next;
+  while (r != nullptr) {
+    next = r->next;
+    r->next = nullptr;
+    lllyd_free(r);
+    r = next;
   }
-
 }
 
 llly_set* DatastoreTransaction::findNode(lllyd_node* node, string path) {
