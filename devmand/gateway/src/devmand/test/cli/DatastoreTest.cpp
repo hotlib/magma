@@ -398,20 +398,18 @@ TEST_F(DatastoreTest, deleteSubtreeDiffNotifyChildren) {
   const std::multimap<Path, DatastoreDiff>& diffs =
       transaction->diff(paths).diffs;
 
-  //  MLOG(MINFO) << "zmena velkost: " << diffs.size();
-  //            for (const auto& item : diffs) {
-  //                MLOG(MINFO) << "{ " << item.second.type << " } key: " <<
-  //                item.first.str()
-  //                            << " zmena bola: " <<
-  //                            item.second.keyedPath.str();
-  //            }
-  EXPECT_EQ(
-      diffs.begin()->first.str(),
-      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
-  EXPECT_EQ(
-      diffs.begin()->second.keyedPath.str(),
-      "/openconfig-interfaces:interfaces/interface[name='0/1']/config");
-  EXPECT_EQ(diffs.size(), 2);
+  MLOG(MINFO) << "zmena velkost: " << diffs.size();
+  for (const auto& item : diffs) {
+    MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
+                << " zmena bola: " << item.second.keyedPath.str();
+  }
+    EXPECT_EQ(
+        diffs.begin()->first.str(),
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
+    EXPECT_EQ(
+        diffs.begin()->second.keyedPath.str(),
+        "/openconfig-interfaces:interfaces/interface[name='0/1']/config");
+    EXPECT_EQ(diffs.size(), 2);
 }
 
 TEST_F(DatastoreTest, deleteCreateAndUpdateScenario) {
@@ -521,23 +519,29 @@ TEST_F(DatastoreTest, diffAfterMerge) {
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state");
   paths.emplace_back(p1, false);
 
-  const std::multimap<Path, DatastoreDiff>& multimap =
+  const std::multimap<Path, DatastoreDiff>& diffs =
       transaction->diff(paths).diffs;
 
+  for (const auto& multi : diffs) {
+    MLOG(MINFO) << "key: " << multi.first.str()
+                << " handles:  " << multi.second.keyedPath.str()
+                << " type: " << multi.second.type;
+  }
+
   EXPECT_EQ(
-      multimap.begin()->first.str(),
+      diffs.begin()->first.str(),
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state");
   EXPECT_EQ(
-      multimap.begin()->second.keyedPath.str(),
+      diffs.begin()->second.keyedPath.str(),
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/85']/openconfig-interfaces:state");
-  EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
+  EXPECT_EQ(diffs.begin()->second.type, DatastoreDiffType::update);
   EXPECT_EQ(
-      multimap.begin()
+      diffs.begin()
           ->second.after["openconfig-interfaces:state"]["oper-status"]
           .asString(),
       "UP");
   EXPECT_EQ(
-      multimap.begin()
+      diffs.begin()
           ->second.before["openconfig-interfaces:state"]["oper-status"]
           .asString(),
       "DOWN");

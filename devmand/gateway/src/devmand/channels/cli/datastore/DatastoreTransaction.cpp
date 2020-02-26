@@ -41,6 +41,7 @@ bool DatastoreTransaction::delete_(Path p) {
 
   if (p.getDepth() == 1) {
     datastoreState->freeTransactionRoot(moduleName); // delete a specific tree
+    return true;
   }
 
   llly_set* pSet = lllyd_find_path(
@@ -250,11 +251,44 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   const vector<RootPair>& pairs =
       datastoreState->getRootAndTransactionRootPairs();
 
+  // first - datastore root
+  // second - transaction root
   for (const auto& pair : pairs) {
-    if (pair.first == nullptr ||
-        pair.second == nullptr) { // can't diff if something is missing
+    if (pair.first == nullptr &&
+        pair.second == nullptr) { // this would be weird
       continue;
     }
+
+    // if everything was deleted make diff manually
+    if (pair.first != nullptr && pair.second == nullptr) {
+      const string path = string("/") +
+          string(pair.first->schema->module->name) + ":" +
+          string(pair.first->schema->name);
+      allDiffs.emplace(make_pair(
+          path,
+          DatastoreDiff(
+              parseJson(toJson(pair.first)),
+              dynamic::object,
+              DatastoreDiffType::deleted,
+              Path(path))));
+      continue;
+    }
+
+    // if everything was created (no previous state available) make diff
+    // manually
+    if (pair.first == nullptr && pair.second != nullptr) {
+      string path = string("/") + string(pair.second->schema->module->name) +
+          ":" + string(pair.second->schema->name);
+      allDiffs.emplace(make_pair(
+          path,
+          DatastoreDiff(
+              dynamic::object,
+              parseJson(toJson(pair.second)),
+              DatastoreDiffType::create,
+              Path(path))));
+      continue;
+    }
+
     map<Path, DatastoreDiff> diffs = libyangDiff(pair.first, pair.second);
     allDiffs.insert(diffs.begin(), diffs.end());
   }
@@ -407,7 +441,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
       //       registeredPath.path.str()  << " changed path: " << path;
       //      if (registeredPath.path.isChildOf(path) &&
       //          registeredPath.path.getDepth() <= path.getDepth()) {
-      if (registeredPath.path.isChildOf(path) &&
+      if (registeredPath.path.isChildOfUnprefixed(path) &&
           registeredPath.path.getDepth() <= path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
@@ -422,7 +456,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
   if (type == DatastoreDiffType::create) {
     for (auto registeredPath : paths) {
-      if (registeredPath.path.isChildOf(path) &&
+      if (registeredPath.path.isChildOfUnprefixed(path) &&
           registeredPath.path.getDepth() == path.getDepth()) {
         registeredPath.asterix = true; // TODO hack
         result.emplace_back(registeredPath);
@@ -436,7 +470,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
   DiffPath resultSoFar;
   bool found = false;
   for (const auto& p : paths) {
-    if (path.segmentDistance(p.path) > max && path.isChildOf(p.path)) {
+    if (path.segmentDistance(p.path) > max && path.isChildOfUnprefixed(p.path)) {
       resultSoFar = p;
       max = path.segmentDistance(p.path);
       found = true;
@@ -547,7 +581,7 @@ dynamic DatastoreTransaction::read(Path path) {
 
   if (not path.getFirstModuleName().hasValue()) {
     throw DatastoreException(
-        "Unable to determine which tree to update, path with module name needed");
+        "Unable to determine which tree to read from, path with module name needed");
   }
   const dynamic& aDynamic = read(
       path,
@@ -559,16 +593,16 @@ dynamic DatastoreTransaction::read(Path path) {
 }
 
 dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
-  if (datastoreState->getRoot("root") == nullptr) {
-    return dynamic::object();
+  if (not path.getFirstModuleName().hasValue()) {
+    throw DatastoreException(
+        "Unable to determine which tree to read from, path with module name needed");
   }
-
-  const dynamic& result = read(path, datastoreState->getRoot("root"));
-  if (result == nullptr) {
+  const dynamic& aDynamic =
+      read(path, datastoreState->getRoot(path.getFirstModuleName().value()));
+  if (aDynamic == nullptr) {
     return dynamic::object(); // for diffs we need an empty object
   }
-
-  return result;
+  return aDynamic;
 }
 
 dynamic DatastoreTransaction::read(Path path, lllyd_node* node) {
