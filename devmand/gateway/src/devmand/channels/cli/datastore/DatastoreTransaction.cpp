@@ -22,25 +22,29 @@ using std::map;
 bool DatastoreTransaction::delete_(Path p) {
   checkIfCommitted();
   string path = p.str();
-  if (path.empty() || root == nullptr) {
+  //TODO iterate over root
+  if (path.empty() || datastoreState->getRoot("root") == nullptr) {
     return false;
   }
 
+  //TODO delete per tree? need a module name at least...
   if (Path::ROOT == p ||
       p.getDepth() == 1) { // TODO SOLVE FOR MULTITREE p.getDepth() == 1
-    freeRoot();
+      datastoreState->freeTransactionRoot();
     return true;
   }
-  lllyd_node* tmp = root;
-  lllyd_node* next = nullptr;
-  llly_set* pSet = nullptr;
-  while (tmp != nullptr && pSet == nullptr) {
-    next = tmp->next;
-    tmp->next = nullptr;
-    pSet = lllyd_find_path(tmp, const_cast<char*>(path.c_str()));
-    tmp->next = next;
-    tmp = next;
-  }
+
+//  lllyd_node* tmp = root;
+//  lllyd_node* next = nullptr;
+    //TODO iterate over more than root
+  llly_set* pSet = lllyd_find_path(datastoreState->getTransactionRoot("root"), const_cast<char*>(path.c_str()));
+//  while (tmp != nullptr && pSet == nullptr) {
+//    next = tmp->next;
+//    tmp->next = nullptr;
+//    pSet = ;
+//    tmp->next = next;
+//    tmp = next;
+//  }
 
   if (pSet == nullptr) {
     MLOG(MDEBUG) << "Nothing to delete, " + path + " not found";
@@ -115,19 +119,21 @@ void DatastoreTransaction::merge(const Path path, const dynamic& aDynamic) {
   dynamic withParents = appendAllParents(path, aDynamic);
   lllyd_node* pNode = dynamic2lydNode(withParents);
 
-  if (root == nullptr) {
-    root = pNode;
+ //TODO iterate over root
+  if (datastoreState->getTransactionRoot("root") == nullptr) {
+      datastoreState->setTransactionRoot("root", pNode);
   } else {
-    lllyd_node* tmp = root;
-    lllyd_node* next;
-    while (tmp != nullptr) {
-      next = tmp->next;
-      tmp->next = nullptr;
-      lllyd_merge(tmp, pNode, 0);
-      tmp->next = next;
-      tmp = next;
-    }
-    freeRoot(pNode);
+    lllyd_node* tmp = datastoreState->getTransactionRoot("root");
+    lllyd_merge(tmp, pNode, LLLYD_OPT_DESTRUCT );
+    datastoreState->setTransactionRoot("root", tmp);
+//    while (tmp != nullptr) {
+//      next = tmp->next;
+//      tmp->next = nullptr;
+//
+//      tmp->next = next;
+//      tmp = next;
+//    }
+//    freeRoot(pNode);
   }
 }
 
@@ -135,13 +141,15 @@ void DatastoreTransaction::commit() {
   checkIfCommitted();
 
   validateBeforeCommit();
-  lllyd_node* rootToBeMerged = computeRoot(
-      root); // need the real root for convenience and copy via lllyd_dup
-  if (!datastoreState->isEmpty()) {
-    freeRoot(datastoreState->root);
-    datastoreState->root = nullptr;
-  }
-  datastoreState->root = rootToBeMerged;
+//  lllyd_node* rootToBeMerged = computeRoot(
+//      root); // need the real root for convenience and copy via lllyd_dup
+//  if (!datastoreState->isEmpty()) {
+//
+//    datastoreState->setRoot("root", nullptr);
+//  }
+  datastoreState->freeRoot();
+  datastoreState->setRootFromTransaction();
+  //datastoreState->setRoot("root", rootToBeMerged);
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
@@ -150,7 +158,7 @@ void DatastoreTransaction::commit() {
 void DatastoreTransaction::abort() {
   checkIfCommitted();
 
-  freeRoot();
+    datastoreState->freeTransactionRoot();
 
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
@@ -173,7 +181,8 @@ void DatastoreTransaction::print(lllyd_node* nodeToPrint) {
 }
 
 void DatastoreTransaction::print() {
-  print(root);
+    //TODO iterate over root
+  print(datastoreState->getTransactionRoot("root"));
 }
 
 string DatastoreTransaction::toJson(lllyd_node* initial) {
@@ -188,17 +197,18 @@ DatastoreTransaction::DatastoreTransaction(
     shared_ptr<DatastoreState> _datastoreState,
     SchemaContext& _schemaContext)
     : datastoreState(_datastoreState), schemaContext(_schemaContext) {
-  if (not datastoreState->isEmpty()) {
-    root = lllyd_dup(datastoreState->root, 1);
-
-    lllyd_node* tmp = datastoreState->root->next;
-    lllyd_node* tmpRoot = root;
-    while (tmp != nullptr) {
-      tmpRoot->next = lllyd_dup(tmp, 1);
-      tmpRoot = tmpRoot->next;
-      tmp = tmp->next;
-    }
-  }
+    datastoreState->duplicateForTransaction();
+//  if (not datastoreState->isEmpty()) {
+//    root = lllyd_dup(datastoreState->getRoot("root"), 1);
+//
+//    lllyd_node* tmp = datastoreState->getRoot("root")->next;
+//    lllyd_node* tmpRoot = root;
+//    while (tmp != nullptr) {
+//      tmpRoot->next = lllyd_dup(tmp, 1);
+//      tmpRoot = tmpRoot->next;
+//      tmp = tmp->next;
+//    }
+//  }
 }
 
 lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
@@ -226,12 +236,14 @@ void DatastoreTransaction::filterMap(
 
 map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   map<Path, DatastoreDiff> allDiffs;
-  lllyd_node* a = datastoreState->root;
-  lllyd_node* b = root;
+  //TODO iterate over more than root
+  lllyd_node* a = datastoreState->getRoot("root");
+  lllyd_node* b = datastoreState->getTransactionRoot("root");
 
   // this covers the case when root has been completely deleted
   if (b == nullptr) {
-    Path rootPath = Path("/" +  string(datastoreState->root->schema->module->name) + ":" + string(datastoreState->root->schema->name));
+      //TODO iterate over root
+    Path rootPath = Path("/" +  string(datastoreState->getRoot("root")->schema->module->name) + ":" + string(datastoreState->getRoot("root")->schema->name));
     DatastoreDiff datastoreDiff(
         readAlreadyCommitted(rootPath),
         dynamic::object(),
@@ -243,7 +255,8 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
 
     // this covers the case when root was created for the first time (i.e. datastoreState is empty)
     if (a == nullptr) {
-        Path rootPath = Path("/" +  string(root->schema->module->name) + ":" + string(root->schema->name));
+        //TODO iterate over root
+        Path rootPath = Path("/" +  string(datastoreState->getTransactionRoot("root")->schema->module->name) + ":" + string(datastoreState->getTransactionRoot("root")->schema->name));
         DatastoreDiff datastoreDiff(
                 dynamic::object(),
                 read(rootPath),
@@ -418,7 +431,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
 DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited) {
-    freeRoot();
+      datastoreState->freeTransactionRoot();
   }
   datastoreState->transactionUnderway.store(false);
 }
@@ -509,7 +522,9 @@ void DatastoreTransaction::printDiffType(LLLYD_DIFFTYPE type) {
 
 dynamic DatastoreTransaction::read(Path path) {
   checkIfCommitted();
-  const dynamic& aDynamic = read(path, root);
+
+  //TODO iterate over root
+  const dynamic& aDynamic = read(path, datastoreState->getTransactionRoot("root"));
   if (aDynamic == nullptr) {
     return dynamic::object(); // for diffs we need an empty object
   }
@@ -517,11 +532,11 @@ dynamic DatastoreTransaction::read(Path path) {
 }
 
 dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
-  if (datastoreState->root == nullptr) {
+  if (datastoreState->getRoot("root") == nullptr) {
     return dynamic::object();
   }
 
-  const dynamic& result = read(path, datastoreState->root);
+  const dynamic& result = read(path, datastoreState->getRoot("root"));
   if (result == nullptr) {
     return dynamic::object(); // for diffs we need an empty object
   }
@@ -572,26 +587,30 @@ lllyd_node* DatastoreTransaction::getExistingNode(
 
 bool DatastoreTransaction::isValid() {
   checkIfCommitted();
-  if (root == nullptr) {
+  //TODO iterate over root
+  if (datastoreState->getTransactionRoot("root") == nullptr) {
     DatastoreException ex(
         "Datastore is empty and no changes performed, nothing to validate");
     MLOG(MWARNING) << ex.what();
     throw ex;
   }
 
-  lllyd_node* tmp = root;
-  lllyd_node* next = nullptr;
-  bool isValid = true;
-  while (tmp != nullptr) {
-    next = tmp->next;
-    tmp->next = nullptr;
-    isValid = isValid &&
-        (lllyd_validate(&tmp, datastoreTypeToLydOption(), nullptr) == 0);
-    tmp->next = next;
-    tmp = next;
-  }
-
-  return isValid;
+  //TODO iterate over more than root
+    lllyd_node *nodeToValidate = datastoreState->getTransactionRoot("root");
+    return lllyd_validate(&nodeToValidate, datastoreTypeToLydOption(), nullptr) == 0;
+//  lllyd_node* tmp = root;
+//  lllyd_node* next = nullptr;
+//  bool isValid = true;
+//  while (tmp != nullptr) {
+//    next = tmp->next;
+//    tmp->next = nullptr;
+//    isValid = isValid &&
+//        (lllyd_validate(&tmp, datastoreTypeToLydOption(), nullptr) == 0);
+//    tmp->next = next;
+//    tmp = next;
+//  }
+//
+//  return isValid;
 }
 
 int DatastoreTransaction::datastoreTypeToLydOption() {
@@ -775,10 +794,10 @@ map<Path, DatastoreDiff> DatastoreTransaction::splitDiff(DatastoreDiff diff) {
   return diffs;
 }
 
-void DatastoreTransaction::freeRoot() {
-  freeRoot(root);
-  root = nullptr;
-}
+//void DatastoreTransaction::freeRoot() {
+//  freeRoot(root);
+//  root = nullptr;
+//}
 
 void DatastoreTransaction::freeRoot(lllyd_node* r) {
   lllyd_node* next = nullptr;

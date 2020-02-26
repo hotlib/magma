@@ -95,7 +95,7 @@ class DatastoreTransaction {
   map<Path, DatastoreDiff> diff(lllyd_node* a, lllyd_node* b);
   string appendKey(dynamic data, string path);
   void filterMap(vector<string> moduleNames, map<Path, DatastoreDiff>& map);
-  void freeRoot();
+  //void freeRoot();
   void freeRoot(lllyd_node* r);
   llly_set* findNode(lllyd_node* node, string path);
 
