@@ -53,7 +53,7 @@ bool DatastoreTransaction::delete_(Path p) {
             " not found for module: " + moduleName;
     return false;
   } else {
-    MLOG(MINFO) << "Deleting " << pSet->number << " subtrees";
+    MLOG(MDEBUG) << "Deleting " << pSet->number << " subtrees";
   }
 
   for (unsigned int j = 0; j < pSet->number; ++j) {
@@ -441,9 +441,11 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
       //       registeredPath.path.str()  << " changed path: " << path;
       //      if (registeredPath.path.isChildOf(path) &&
       //          registeredPath.path.getDepth() <= path.getDepth()) {
-      if (registeredPath.path.isChildOfUnprefixed(path) &&
-          registeredPath.path.getDepth() <= path.getDepth()) {
-        registeredPath.asterix = true; // TODO hack
+      if ((registeredPath.path.isChildOfUnprefixed(path) &&
+           registeredPath.path.getDepth() <= path.getDepth()) ||
+          (registeredPath.asterix &&
+           path.isChildOfUnprefixed(registeredPath.path))) {
+        registeredPath.asterix = true; // TODO think about the implications
         result.emplace_back(registeredPath);
         //          MLOG(MINFO)  << " pridavam registeredPath: " <<
         //                      registeredPath.path.str()  << " ako odpoved na
@@ -456,9 +458,11 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
   if (type == DatastoreDiffType::create) {
     for (auto registeredPath : paths) {
-      if (registeredPath.path.isChildOfUnprefixed(path) &&
-          registeredPath.path.getDepth() == path.getDepth()) {
-        registeredPath.asterix = true; // TODO hack
+      if ((registeredPath.path.isChildOfUnprefixed(path) &&
+           registeredPath.path.getDepth() == path.getDepth()) ||
+          (registeredPath.asterix &&
+           path.isChildOfUnprefixed(registeredPath.path))) {
+        registeredPath.asterix = true; // TODO think about the implications
         result.emplace_back(registeredPath);
       }
     }
