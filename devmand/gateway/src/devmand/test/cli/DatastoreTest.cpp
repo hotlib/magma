@@ -28,6 +28,7 @@
 #include <ydk_openconfig/iana_if_type.hpp>
 #include <ydk_openconfig/openconfig_interfaces.hpp>
 #include <ydk_openconfig/openconfig_vlan_types.hpp>
+#include <algorithm>
 
 namespace devmand {
 namespace test {
@@ -68,6 +69,7 @@ using OpenconfigInterfaces = openconfig::openconfig_interfaces::Interfaces;
 using OpenconfigInterface = OpenconfigInterfaces::Interface;
 using OpenconfigConfig = OpenconfigInterface::Config;
 using VlanType = openconfig::openconfig_vlan_types::VlanModeType;
+using channels::cli::datastore::DiffResult;
 
 class DatastoreTest : public ::testing::Test {
  protected:
@@ -391,25 +393,59 @@ TEST_F(DatastoreTest, deleteSubtreeDiffNotifyChildren) {
   transaction->delete_("/openconfig-interfaces:interfaces");
 
   vector<DiffPath> paths;
-  Path p1(
+  string configPath(
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
+  Path p1(configPath);
   paths.emplace_back(p1, false);
 
-  const std::multimap<Path, DatastoreDiff>& diffs =
-      transaction->diff(paths).diffs;
+  DiffResult diffResult = transaction->diff(paths);
 
-  MLOG(MINFO) << "zmena velkost: " << diffs.size();
-  for (const auto& item : diffs) {
-    MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
-                << " zmena bola: " << item.second.keyedPath.str();
+  const std::multimap<Path, DatastoreDiff>& diffs = diffResult.diffs;
+
+  //  MLOG(MINFO) << "zmena velkost: " << diffs.size();
+  //  for (const auto& item : diffs) {
+  //    MLOG(MINFO) << "{ " << item.second.type << " } key: " <<
+  //    item.first.str()
+  //                << " zmena bola: " << item.second.keyedPath.str();
+  //  }
+
+  auto it = diffs.equal_range(configPath.c_str());
+
+  string handledConfigPath01 =
+      "/openconfig-interfaces:interfaces/interface[name='0/1']/config";
+  string handledConfigPath02 =
+      "/openconfig-interfaces:interfaces/interface[name='0/2']/config";
+
+  // check counters
+  EXPECT_EQ(diffs.size(), 2);
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(configPath, itr->first.str());
+    EXPECT_EQ(DatastoreDiffType::deleted, itr->second.type);
+    if (handledConfigPath01 == itr->second.keyedPath.str()) {
+      EXPECT_EQ(handledConfigPath01, itr->second.keyedPath.str());
+    } else {
+      EXPECT_EQ(handledConfigPath02, itr->second.keyedPath.str());
+    }
   }
-    EXPECT_EQ(
-        diffs.begin()->first.str(),
-        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
-    EXPECT_EQ(
-        diffs.begin()->second.keyedPath.str(),
-        "/openconfig-interfaces:interfaces/interface[name='0/1']/config");
-    EXPECT_EQ(diffs.size(), 2);
+
+  vector<string> expectedUnhandled;
+  expectedUnhandled.emplace_back("/interfaces");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']/state");
+  expectedUnhandled.emplace_back(
+      "/interfaces/interface[name='0/1']/state/counters");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/2']");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/2']/state");
+  expectedUnhandled.emplace_back(
+      "/interfaces/interface[name='0/2']/state/counters");
+
+  vector<string> actuallyUnhandled;
+  for (const auto& path : diffResult.unhandledDiffs) {
+    actuallyUnhandled.emplace_back(path.unprefixAllSegments().str());
+  }
+  std::sort(expectedUnhandled.begin(), expectedUnhandled.end());
+  std::sort(actuallyUnhandled.begin(), actuallyUnhandled.end());
+  EXPECT_EQ(expectedUnhandled, actuallyUnhandled);
 }
 
 TEST_F(DatastoreTest, deleteCreateAndUpdateScenario) {
@@ -422,24 +458,68 @@ TEST_F(DatastoreTest, deleteCreateAndUpdateScenario) {
   transaction = datastore.newTx();
   transaction->overwrite(Path("/"), parseJson(simpleReplaceInterface));
 
+  string ifaceCounterPath =
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/state/counters";
   vector<DiffPath> paths;
   Path p1(
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
-  Path p2(
-      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/state/counters");
+  Path p2(ifaceCounterPath);
   paths.emplace_back(p1, false);
   paths.emplace_back(p2, false);
 
-  const std::multimap<Path, DatastoreDiff>& diffs =
-      transaction->diff(paths).diffs;
+  DiffResult diffResult = transaction->diff(paths);
+  const std::multimap<Path, DatastoreDiff>& diffs = diffResult.diffs;
 
-  // TODO /openconfig-interfaces:counters/openconfig-interfaces:out-octets neni
-  // spravne namapovanyS
-  MLOG(MINFO) << "zmena velkost: " << diffs.size();
-  for (const auto& item : diffs) {
-    MLOG(MINFO) << "{ " << item.second.type << " } key: " << item.first.str()
-                << " zmena bola: " << item.second.keyedPath.str();
+  auto it = diffs.equal_range(ifaceCounterPath.c_str());
+
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    if (itr->first.str() == ifaceCounterPath) {
+      if (itr->second.type == DatastoreDiffType::update) {
+        EXPECT_EQ(ifaceCounterPath, itr->first.str());
+        EXPECT_EQ(
+            "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters",
+            itr->second.keyedPath.str());
+
+      } else {
+        EXPECT_EQ(ifaceCounterPath, itr->first.str());
+        EXPECT_EQ(
+            "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/1']/state/counters",
+            itr->second.keyedPath.str());
+        EXPECT_EQ(DatastoreDiffType::deleted, itr->second.type);
+      }
+    }
   }
+
+  it = diffs.equal_range(
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config");
+
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/config",
+        itr->first.str());
+    EXPECT_EQ(
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/1']/config",
+        itr->second.keyedPath.str());
+    EXPECT_EQ(DatastoreDiffType::deleted, itr->second.type);
+  }
+
+  vector<string> expectedUnhandled;
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']/state");
+  expectedUnhandled.emplace_back(
+      "/interfaces/interface[name='0/2']/subinterfaces");
+  expectedUnhandled.emplace_back(
+      "/interfaces/interface[name='0/2']/subinterfaces/subinterface[index='0']");
+  expectedUnhandled.emplace_back(
+      "/interfaces/interface[name='0/2']/subinterfaces/subinterface[index='0']/config");
+
+  vector<string> actuallyUnhandled;
+  for (const auto& path : diffResult.unhandledDiffs) {
+    actuallyUnhandled.emplace_back(path.unprefixAllSegments().str());
+  }
+  std::sort(expectedUnhandled.begin(), expectedUnhandled.end());
+  std::sort(actuallyUnhandled.begin(), actuallyUnhandled.end());
+  EXPECT_EQ(expectedUnhandled, actuallyUnhandled);
 }
 
 TEST_F(DatastoreTest, deleteSubtreeDiffDontNotifyParent) {
@@ -660,6 +740,84 @@ TEST_F(DatastoreTest, diffMultipleOperations) {
         "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/counters",
         itr->second.keyedPath.str());
   }
+}
+
+TEST_F(DatastoreTest, createParentListenChildDiff) {
+  Datastore datastore(Datastore::operational(), schemaContext);
+  unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
+      datastore.newTx();
+  transaction->overwrite(Path("/"), parseJson(simpleInterfaces));
+
+  vector<DiffPath> paths;
+  string configPath = "/openconfig-interfaces:interfaces/interface/config";
+  string countersPath =
+      "/openconfig-interfaces:interfaces/interface/openconfig-interfaces:state/counters";
+  Path p1(configPath);
+  Path p2(countersPath);
+  paths.emplace_back(p1, false);
+  paths.emplace_back(p2, false);
+
+  DiffResult diffResult = transaction->diff(paths);
+  const std::multimap<Path, DatastoreDiff>& diffs = diffResult.diffs;
+
+  //            for (const auto& item : diffs) {
+  //                MLOG(MINFO) << "{ " << item.second.type << " } key: " <<
+  //                item.first.str()
+  //                            << " zmena bola: " <<
+  //                            item.second.keyedPath.str();
+  //            }
+
+  auto it = diffs.equal_range(countersPath.c_str());
+
+  string handledCounterPath01 =
+      "/openconfig-interfaces:interfaces/interface[name='0/1']/state/counters";
+  string handledCounterPath02 =
+      "/openconfig-interfaces:interfaces/interface[name='0/2']/state/counters";
+
+  // check counters
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(countersPath, itr->first.str());
+    EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+    if (handledCounterPath01 == itr->second.keyedPath.str()) {
+      EXPECT_EQ(handledCounterPath01, itr->second.keyedPath.str());
+    } else {
+      EXPECT_EQ(handledCounterPath02, itr->second.keyedPath.str());
+    }
+  }
+
+  // check config
+  string handledConfigPath01 =
+      "/openconfig-interfaces:interfaces/interface[name='0/1']/config";
+  string handledConfigPath02 =
+      "/openconfig-interfaces:interfaces/interface[name='0/2']/config";
+
+  it = diffs.equal_range(configPath.c_str());
+
+  for (auto itr = it.first; itr != it.second; ++itr) {
+    EXPECT_EQ(configPath, itr->first.str());
+    EXPECT_EQ(DatastoreDiffType::create, itr->second.type);
+    if (handledConfigPath01 == itr->second.keyedPath.str()) {
+      EXPECT_EQ(handledConfigPath01, itr->second.keyedPath.str());
+    } else {
+      EXPECT_EQ(handledConfigPath02, itr->second.keyedPath.str());
+    }
+  }
+
+  // check unhandled
+  vector<string> expectedUnhandled;
+  expectedUnhandled.emplace_back("/interfaces");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/1']/state");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/2']");
+  expectedUnhandled.emplace_back("/interfaces/interface[name='0/2']/state");
+
+  vector<string> actuallyUnhandled;
+  for (const auto& path : diffResult.unhandledDiffs) {
+    actuallyUnhandled.emplace_back(path.unprefixAllSegments().str());
+  }
+  std::sort(expectedUnhandled.begin(), expectedUnhandled.end());
+  std::sort(actuallyUnhandled.begin(), actuallyUnhandled.end());
+  EXPECT_EQ(expectedUnhandled, actuallyUnhandled);
 }
 
 TEST_F(DatastoreTest, simpleCreateDiff) {

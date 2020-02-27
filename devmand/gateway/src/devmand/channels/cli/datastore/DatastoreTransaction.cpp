@@ -470,7 +470,8 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
   DiffPath resultSoFar;
   bool found = false;
   for (const auto& p : paths) {
-    if (path.segmentDistance(p.path) > max && path.isChildOfUnprefixed(p.path)) {
+    if (path.segmentDistance(p.path) > max &&
+        path.isChildOfUnprefixed(p.path)) {
       resultSoFar = p;
       max = path.segmentDistance(p.path);
       found = true;
