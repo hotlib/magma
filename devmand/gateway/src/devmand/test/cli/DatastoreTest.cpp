@@ -953,7 +953,9 @@ TEST_F(DatastoreTest, twoIdenpendentTreesDiffUpdateTest) {
   EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
 }
 
-TEST_F(DatastoreTest, threeIndenpendentTreesDiffDeleteAndNotifyParentBecauseAsterixTest) {
+TEST_F(
+    DatastoreTest,
+    threeIndenpendentTreesDiffDeleteAndNotifyParentBecauseAsterixTest) {
   Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
