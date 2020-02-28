@@ -350,11 +350,10 @@ bool DatastoreTransaction::shouldHandleSubtree(
       changedPath.isChildOfUnprefixed(registeredPath.path);
 }
 
-bool DatastoreTransaction::pathUnderChange(
+bool DatastoreTransaction::isExactPath(
     const DiffPath& registeredPath,
     const Path& changedPath) {
-  return registeredPath.path.isChildOfUnprefixed(changedPath) &&
-      registeredPath.path.getDepth() == changedPath.getDepth();
+  return registeredPath.path.unkeyed().unprefixAllSegments() ==  changedPath.unkeyed().unprefixAllSegments();
 }
 
 bool DatastoreTransaction::isAboveChange(
@@ -368,7 +367,7 @@ bool DatastoreTransaction::isPickableCreate(
     DatastoreDiffType type,
     const DiffPath& toNotifyPath,
     const Path& changedPath) {
-  return pathUnderChange(toNotifyPath, changedPath) &&
+  return isExactPath(toNotifyPath, changedPath) &&
       type == DatastoreDiffType::create;
 }
 

@@ -84,7 +84,7 @@ class DatastoreTransaction {
   static bool shouldHandleSubtree(
       const DiffPath& registeredPath,
       const Path& changedPath);
-  static bool pathUnderChange(
+  static bool isExactPath(
       const DiffPath& registeredPath,
       const Path& changedPath);
   static bool isAboveChange(

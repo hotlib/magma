@@ -315,38 +315,37 @@ TEST_F(DatastoreTest, changeLeafDiff) {
 
   const std::multimap<Path, DatastoreDiff>& multimap =
       transaction->diff(paths).diffs;
-  //
-  //  EXPECT_EQ(
-  //      multimap.begin()->first.str(),
-  //      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters");
-  //  EXPECT_EQ(
-  //      multimap.begin()->second.keyedPath.str(),
-  //      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters");
-  //  EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
-  //  EXPECT_EQ(
-  //      multimap.begin()
-  //          ->second.before["openconfig-interfaces:counters"]["out-errors"]
-  //          .asString(),
-  //      "0");
-  //  EXPECT_EQ(
-  //      multimap.begin()
-  //          ->second.before["openconfig-interfaces:counters"]["out-discards"]
-  //          .asString(),
-  //      "0");
-  //  EXPECT_EQ(
-  //      multimap.begin()
-  //          ->second.after["openconfig-interfaces:counters"]["out-errors"]
-  //          .asString(),
-  //      "777");
-  //  EXPECT_EQ(
-  //      multimap.begin()
-  //          ->second.after["openconfig-interfaces:counters"]["out-discards"]
-  //          .asString(),
-  //      "17");
+
+    EXPECT_EQ(
+        multimap.begin()->first.str(),
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters");
+    EXPECT_EQ(
+        multimap.begin()->second.keyedPath.str(),
+        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters");
+    EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
+    EXPECT_EQ(
+        multimap.begin()
+            ->second.before["openconfig-interfaces:counters"]["out-errors"]
+            .asString(),
+        "0");
+    EXPECT_EQ(
+        multimap.begin()
+            ->second.before["openconfig-interfaces:counters"]["out-discards"]
+            .asString(),
+        "0");
+    EXPECT_EQ(
+        multimap.begin()
+            ->second.after["openconfig-interfaces:counters"]["out-errors"]
+            .asString(),
+        "777");
+    EXPECT_EQ(
+        multimap.begin()
+            ->second.after["openconfig-interfaces:counters"]["out-discards"]
+            .asString(),
+        "17");
 }
 
-// TODO not sure how this test should work fixit later
-TEST_F(DatastoreTest, DISABLED_deleteSubtreeDiff) {
+TEST_F(DatastoreTest, deleteSubtreeDiff) {
   Datastore datastore(Datastore::operational(), schemaContext);
   unique_ptr<channels::cli::datastore::DatastoreTransaction> transaction =
       datastore.newTx();
@@ -359,12 +358,11 @@ TEST_F(DatastoreTest, DISABLED_deleteSubtreeDiff) {
 
   vector<DiffPath> paths;
   Path p1("/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
-  paths.emplace_back(p1, false);
+  paths.emplace_back(p1, true);
 
   const std::multimap<Path, DatastoreDiff>& multimap =
       transaction->diff(paths).diffs;
 
-  MLOG(MINFO) << "size: " << multimap.size();
   EXPECT_EQ(
       multimap.begin()->first.str(),
       "/openconfig-interfaces:interfaces/openconfig-interfaces:interface");
