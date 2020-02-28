@@ -243,9 +243,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
 
     // if everything was deleted make diff manually
     if (pair.first != nullptr && pair.second == nullptr) {
-      const string path = string("/") +
-          string(pair.first->schema->module->name) + ":" +
-          string(pair.first->schema->name);
+      const string path = makePrefixedSegment(pair.first);
       allDiffs.emplace(make_pair(
           path,
           DatastoreDiff(
@@ -259,8 +257,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
     // if everything was created (no previous state available) make diff
     // manually
     if (pair.first == nullptr && pair.second != nullptr) {
-      string path = string("/") + string(pair.second->schema->module->name) +
-          ":" + string(pair.second->schema->name);
+      string path = makePrefixedSegment(pair.second);
       allDiffs.emplace(make_pair(
           path,
           DatastoreDiff(
@@ -273,57 +270,6 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
 
     map<Path, DatastoreDiff> diffs = libyangDiff(pair.first, pair.second);
     allDiffs.insert(diffs.begin(), diffs.end());
-  }
-
-  return allDiffs;
-}
-
-map<Path, DatastoreDiff> DatastoreTransaction::diff(
-    lllyd_node* a,
-    lllyd_node* b) {
-  map<Path, DatastoreDiff> allDiffs;
-
-  // this covers the case when root has been completely deleted
-  if (b == nullptr) {
-    Path rootPath = Path(
-        "/" + string(a->schema->module->name) + ":" + string(a->schema->name));
-    DatastoreDiff datastoreDiff(
-        readAlreadyCommitted(rootPath),
-        dynamic::object(),
-        DatastoreDiffType::deleted,
-        rootPath);
-    allDiffs.emplace(rootPath, datastoreDiff);
-    return allDiffs;
-  }
-
-  // this covers the case when root was created for the first time (i.e.
-  // datastoreState is empty)
-  if (a == nullptr) {
-    Path rootPath = Path(
-        "/" + string(b->schema->module->name) + ":" + string(b->schema->name));
-    DatastoreDiff datastoreDiff(
-        dynamic::object(), read(rootPath), DatastoreDiffType::create, rootPath);
-    allDiffs.emplace(rootPath, datastoreDiff);
-    return allDiffs;
-  }
-
-  vector<string> previousModuleNames;
-  while (a != nullptr && b != nullptr) {
-    lllyd_node* aNext = a->next;
-    lllyd_node* bNext = b->next;
-    a->next = nullptr;
-    b->next = nullptr;
-    map<Path, DatastoreDiff> partialDiff = diff(a, b);
-    std::stringstream moduleAndNodeName;
-    moduleAndNodeName << "/" << a->schema->module->name << ":"
-                      << a->schema->name;
-    filterMap(previousModuleNames, partialDiff);
-    allDiffs.insert(partialDiff.begin(), partialDiff.end());
-    a->next = aNext;
-    b->next = bNext;
-    a = aNext;
-    b = bNext;
-    previousModuleNames.emplace_back(moduleAndNodeName.str());
   }
 
   return allDiffs;
@@ -378,6 +324,14 @@ map<Path, DatastoreDiff> DatastoreTransaction::libyangDiff(
   return diffs;
 }
 
+bool DatastoreTransaction::segmentDiffOneOrLess(
+    const Path& toNotifyPath,
+    const Path& changedPath) {
+  return changedPath.getSegments().size() ==
+      (toNotifyPath.getSegments().size() + 1) ||
+      changedPath.getSegments().size() == toNotifyPath.getSegments().size();
+}
+
 vector<Path> DatastoreTransaction::getRegisteredPath(
     vector<DiffPath> registeredPaths,
     Path path,
@@ -392,10 +346,7 @@ vector<Path> DatastoreTransaction::getRegisteredPath(
 
   for (const auto& parentsToNotify : registeredParentsToNotify) {
     if (parentsToNotify.asterix ||
-        path.getSegments().size() ==
-            (parentsToNotify.path.getSegments().size() + 1) ||
-        path.getSegments().size() ==
-            parentsToNotify.path.getSegments().size()) {
+        segmentDiffOneOrLess(parentsToNotify.path, path)) {
       result.emplace_back(parentsToNotify.path);
     } else {
       MLOG(MINFO) << "seg diff: " << path.getSegments().size()
@@ -408,58 +359,84 @@ vector<Path> DatastoreTransaction::getRegisteredPath(
   return result;
 }
 
+bool DatastoreTransaction::shouldHandleSubtree(
+    const DiffPath& registeredPath,
+    const Path& changedPath) {
+  return registeredPath.asterix &&
+      changedPath.isChildOfUnprefixed(registeredPath.path);
+}
+
+bool DatastoreTransaction::pathUnderChange(
+    const DiffPath& registeredPath,
+    const Path& changedPath) {
+  return registeredPath.path.isChildOfUnprefixed(changedPath) &&
+      registeredPath.path.getDepth() == changedPath.getDepth();
+}
+
+bool DatastoreTransaction::isAboveChange(
+    const DiffPath& registeredPath,
+    const Path& changedPath){
+    return registeredPath.path.isChildOfUnprefixed(changedPath) &&
+     registeredPath.path.getDepth() <= changedPath.getDepth();
+}
+
+
+    bool DatastoreTransaction::isPickableCreate(DatastoreDiffType type,
+                                 const DiffPath & toNotifyPath,
+                                 const Path & changedPath){
+    return pathUnderChange(toNotifyPath, changedPath) && type == DatastoreDiffType::create;
+}
+
+    bool DatastoreTransaction::isPickableDelete(DatastoreDiffType type,
+                                                       const DiffPath & toNotifyPath,
+                                                       const Path & changedPath){
+        return isAboveChange(toNotifyPath, changedPath) && type == DatastoreDiffType::deleted;
+    }
+
+
+    vector<DiffPath> DatastoreTransaction::matchClosesUpdatePath(Path & modifiedPath, vector<DiffPath> & registeredPaths){
+        vector<DiffPath> result;
+
+        unsigned int max = 0;
+        DiffPath resultSoFar;
+        bool found = false;
+        for (const auto& p : registeredPaths) {
+            if (modifiedPath.segmentDistance(p.path) > max &&
+                    modifiedPath.isChildOfUnprefixed(p.path)) {
+                resultSoFar = p;
+                max = modifiedPath.segmentDistance(p.path);
+                found = true;
+            }
+        }
+        if (found) {
+            result.emplace_back(resultSoFar);
+        }
+
+        return result;
+}
+
+
 vector<DiffPath> DatastoreTransaction::pickClosestPath(
     Path path,
     vector<DiffPath> paths,
     DatastoreDiffType type) {
-  vector<DiffPath> result;
 
   // MLOG(MINFO) << "CHANGE: " << path.str();
 
-  if (type == DatastoreDiffType::deleted) {
-    for (auto registeredPath : paths) {
-      if ((registeredPath.path.isChildOfUnprefixed(path) &&
-           registeredPath.path.getDepth() <= path.getDepth()) ||
-          (registeredPath.asterix &&
-           path.isChildOfUnprefixed(registeredPath.path))) {
-        registeredPath.asterix = true; // TODO think about the implications
-        result.emplace_back(registeredPath);
+  if(type == DatastoreDiffType::deleted || type == DatastoreDiffType::create){
+      vector<DiffPath> result;
+      for (auto registeredPath : paths) {
+          if( shouldHandleSubtree(registeredPath, path)
+          || isPickableCreate(type, registeredPath, path)
+          || isPickableDelete(type, registeredPath, path)){
+              registeredPath.asterix = true;
+              result.emplace_back(registeredPath);
+          }
       }
-    }
-
-    return result;
+      return result;
   }
 
-  if (type == DatastoreDiffType::create) {
-    for (auto registeredPath : paths) {
-      if ((registeredPath.path.isChildOfUnprefixed(path) &&
-           registeredPath.path.getDepth() == path.getDepth()) ||
-          (registeredPath.asterix &&
-           path.isChildOfUnprefixed(registeredPath.path))) {
-        registeredPath.asterix = true; // TODO think about the implications
-        result.emplace_back(registeredPath);
-      }
-    }
-
-    return result;
-  }
-
-  unsigned int max = 0;
-  DiffPath resultSoFar;
-  bool found = false;
-  for (const auto& p : paths) {
-    if (path.segmentDistance(p.path) > max &&
-        path.isChildOfUnprefixed(p.path)) {
-      resultSoFar = p;
-      max = path.segmentDistance(p.path);
-      found = true;
-    }
-  }
-  if (found) {
-    result.emplace_back(resultSoFar);
-  }
-
-  return result;
+    return matchClosesUpdatePath(path, paths);
 }
 
 DatastoreTransaction::~DatastoreTransaction() {
@@ -497,6 +474,12 @@ DatastoreDiffType DatastoreTransaction::getDiffType(LLLYD_DIFFTYPE type) {
   }
 }
 
+string DatastoreTransaction::makePrefixedSegment(lllyd_node* node) {
+  std::stringstream path;
+  path << "/" << node->schema->module->name << ":" << node->schema->name;
+  return path.str();
+}
+
 void DatastoreTransaction::addKeysToPath(
     lllyd_node* node,
     std::stringstream& path) {
@@ -520,7 +503,7 @@ void DatastoreTransaction::addKeysToPath(
 
 string DatastoreTransaction::buildFullPath(lllyd_node* node, string pathSoFar) {
   std::stringstream path;
-  path << "/" << node->schema->module->name << ":" << node->schema->name;
+  path << makePrefixedSegment(node);
   if (node->schema->nodetype == LLLYS_LIST) {
     addKeysToPath(node, path);
   }
@@ -680,15 +663,8 @@ void DatastoreTransaction::splitToMany(
       //                  << " nazov kluca je: " << item.first.c_str();
 
       if (p.unkeyed().getLastSegment() !=
-          item.first.asString()) { // TODO skip last overlapping segment name
-        if (p.str() ==
-            "/reallyempty") { // TODO problem s vymazavanim top level elementu
-          // + musi byt module prefix kvoli key
-          // resolution!
-          currentPath = string("/") + item.first.c_str();
-        } else {
+          item.first.asString()) { // skip last overlapping segment name
           currentPath = p.str() + "/" + item.first.c_str();
-        }
       }
 
       if (item.second.isArray()) { // if it is a YANG list i.e. dynamic
@@ -705,7 +681,6 @@ void DatastoreTransaction::splitToMany(
               result); // recursively go into the array item
         }
       } else { // a regular object
-        //   MLOG(MINFO) << "idem pridat: " << currentPath;
         result.emplace_back(std::make_pair(currentPath, input));
         splitToMany(Path(currentPath), item.second, result);
       }
@@ -714,7 +689,6 @@ void DatastoreTransaction::splitToMany(
 }
 
 string DatastoreTransaction::appendKey(dynamic data, string pathToList) {
-  // MLOG(MINFO) << "hladam kluc pre: " << pathToList;
   Path pathToResolve(pathToList);
   // if the last segment already contains a key, don't append it again
   if (pathToResolve.isLastSegmentKeyed()) {
