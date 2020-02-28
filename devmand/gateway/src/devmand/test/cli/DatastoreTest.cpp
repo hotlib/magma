@@ -657,7 +657,7 @@ TEST_F(DatastoreTest, diffAfterMerge) {
   transaction->abort();
 }
 
-TEST_F(DatastoreTest, DISABLED_writeAndReadYdk) {
+TEST_F(DatastoreTest, writeAndReadYdk) {
   shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
   shared_ptr<Datastore> datastore =
       std::make_shared<Datastore>(Datastore::operational(), schemaContext);
@@ -681,7 +681,7 @@ TEST_F(DatastoreTest, DISABLED_writeAndReadYdk) {
   EXPECT_EQ(description, "dummy state");
 }
 
-TEST_F(DatastoreTest, DISABLED_readSubElementYdk) {
+TEST_F(DatastoreTest, readSubElementYdk) {
   shared_ptr<OpenconfigInterfaces> openconfigInterfaces = ydkInterfaces();
   shared_ptr<Datastore> datastore =
       std::make_shared<Datastore>(Datastore::operational(), schemaContext);

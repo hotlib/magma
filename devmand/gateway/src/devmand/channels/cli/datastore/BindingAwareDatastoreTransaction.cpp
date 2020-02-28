@@ -54,7 +54,4 @@ void BindingAwareDatastoreTransaction::print() {
   datastoreTransaction->print();
 }
 
-BindingAwareDatastoreTransaction::~BindingAwareDatastoreTransaction() {
-  datastoreTransaction->~DatastoreTransaction();
-}
 } // namespace devmand::channels::cli::datastore
