@@ -211,22 +211,6 @@ lllyd_node* DatastoreTransaction::computeRoot(lllyd_node* n) {
   return n;
 }
 
-void DatastoreTransaction::filterMap(
-    vector<string> moduleNames,
-    map<Path, DatastoreDiff>& data) {
-  vector<Path> toBeDeleted;
-  for (const auto& m : data) {
-    for (const auto& moduleName : moduleNames) {
-      if (m.first.str().rfind(moduleName, 0) == 0) {
-        toBeDeleted.emplace_back(m.first);
-      }
-    }
-  }
-  for (const auto& beDeleted : toBeDeleted) {
-    data.erase(beDeleted);
-  }
-}
-
 map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   map<Path, DatastoreDiff> allDiffs;
 
@@ -375,68 +359,70 @@ bool DatastoreTransaction::pathUnderChange(
 
 bool DatastoreTransaction::isAboveChange(
     const DiffPath& registeredPath,
-    const Path& changedPath){
-    return registeredPath.path.isChildOfUnprefixed(changedPath) &&
-     registeredPath.path.getDepth() <= changedPath.getDepth();
+    const Path& changedPath) {
+  return registeredPath.path.isChildOfUnprefixed(changedPath) &&
+      registeredPath.path.getDepth() <= changedPath.getDepth();
 }
 
-
-    bool DatastoreTransaction::isPickableCreate(DatastoreDiffType type,
-                                 const DiffPath & toNotifyPath,
-                                 const Path & changedPath){
-    return pathUnderChange(toNotifyPath, changedPath) && type == DatastoreDiffType::create;
+bool DatastoreTransaction::isPickableCreate(
+    DatastoreDiffType type,
+    const DiffPath& toNotifyPath,
+    const Path& changedPath) {
+  return pathUnderChange(toNotifyPath, changedPath) &&
+      type == DatastoreDiffType::create;
 }
 
-    bool DatastoreTransaction::isPickableDelete(DatastoreDiffType type,
-                                                       const DiffPath & toNotifyPath,
-                                                       const Path & changedPath){
-        return isAboveChange(toNotifyPath, changedPath) && type == DatastoreDiffType::deleted;
+bool DatastoreTransaction::isPickableDelete(
+    DatastoreDiffType type,
+    const DiffPath& toNotifyPath,
+    const Path& changedPath) {
+  return isAboveChange(toNotifyPath, changedPath) &&
+      type == DatastoreDiffType::deleted;
+}
+
+vector<DiffPath> DatastoreTransaction::matchClosesUpdatePath(
+    Path& modifiedPath,
+    vector<DiffPath>& registeredPaths) {
+  vector<DiffPath> result;
+
+  unsigned int max = 0;
+  DiffPath resultSoFar;
+  bool found = false;
+  for (const auto& p : registeredPaths) {
+    if (modifiedPath.segmentDistance(p.path) > max &&
+        modifiedPath.isChildOfUnprefixed(p.path)) {
+      resultSoFar = p;
+      max = modifiedPath.segmentDistance(p.path);
+      found = true;
     }
+  }
+  if (found) {
+    result.emplace_back(resultSoFar);
+  }
 
-
-    vector<DiffPath> DatastoreTransaction::matchClosesUpdatePath(Path & modifiedPath, vector<DiffPath> & registeredPaths){
-        vector<DiffPath> result;
-
-        unsigned int max = 0;
-        DiffPath resultSoFar;
-        bool found = false;
-        for (const auto& p : registeredPaths) {
-            if (modifiedPath.segmentDistance(p.path) > max &&
-                    modifiedPath.isChildOfUnprefixed(p.path)) {
-                resultSoFar = p;
-                max = modifiedPath.segmentDistance(p.path);
-                found = true;
-            }
-        }
-        if (found) {
-            result.emplace_back(resultSoFar);
-        }
-
-        return result;
+  return result;
 }
-
 
 vector<DiffPath> DatastoreTransaction::pickClosestPath(
     Path path,
     vector<DiffPath> paths,
     DatastoreDiffType type) {
-
   // MLOG(MINFO) << "CHANGE: " << path.str();
 
-  if(type == DatastoreDiffType::deleted || type == DatastoreDiffType::create){
-      vector<DiffPath> result;
-      for (auto registeredPath : paths) {
-          if( shouldHandleSubtree(registeredPath, path)
-          || isPickableCreate(type, registeredPath, path)
-          || isPickableDelete(type, registeredPath, path)){
-              registeredPath.asterix = true;
-              result.emplace_back(registeredPath);
-          }
+  if (type == DatastoreDiffType::deleted || type == DatastoreDiffType::create) {
+    vector<DiffPath> result;
+    for (auto registeredPath : paths) {
+      if (shouldHandleSubtree(registeredPath, path) ||
+          isPickableCreate(type, registeredPath, path) ||
+          isPickableDelete(type, registeredPath, path)) {
+        registeredPath.asterix = true;
+        result.emplace_back(registeredPath);
       }
-      return result;
+    }
+    return result;
   }
 
-    return matchClosesUpdatePath(path, paths);
+  return matchClosesUpdatePath(path, paths);
 }
 
 DatastoreTransaction::~DatastoreTransaction() {
@@ -664,7 +650,7 @@ void DatastoreTransaction::splitToMany(
 
       if (p.unkeyed().getLastSegment() !=
           item.first.asString()) { // skip last overlapping segment name
-          currentPath = p.str() + "/" + item.first.c_str();
+        currentPath = p.str() + "/" + item.first.c_str();
       }
 
       if (item.second.isArray()) { // if it is a YANG list i.e. dynamic

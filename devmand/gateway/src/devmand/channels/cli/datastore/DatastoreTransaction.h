@@ -93,17 +93,21 @@ class DatastoreTransaction {
   static bool segmentDiffOneOrLess(
       const Path& noTotifyPath,
       const Path& changedPath);
-    static bool isPickableDelete(DatastoreDiffType type,
-            const DiffPath& toNotifyPath,
-            const Path& changedPath);
-    static bool isPickableCreate(DatastoreDiffType type,
-                                 const DiffPath & toNotifyPath,
-                                 const Path & changedPath);
+  static bool isPickableDelete(
+      DatastoreDiffType type,
+      const DiffPath& toNotifyPath,
+      const Path& changedPath);
+  static bool isPickableCreate(
+      DatastoreDiffType type,
+      const DiffPath& toNotifyPath,
+      const Path& changedPath);
   static dynamic appendAllParents(Path path, const dynamic& aDynamic);
   static Path unifyLength(Path registeredPath, Path keyedPath);
   vector<DiffPath>
   pickClosestPath(Path path, vector<DiffPath> paths, DatastoreDiffType type);
-  static vector<DiffPath> matchClosesUpdatePath(Path & modifiedPath, vector<DiffPath> & registeredPaths);
+  static vector<DiffPath> matchClosesUpdatePath(
+      Path& modifiedPath,
+      vector<DiffPath>& registeredPaths);
   map<Path, DatastoreDiff> splitDiff(DatastoreDiff diff);
   void
   splitToMany(Path p, dynamic input, vector<std::pair<string, dynamic>>& v);
@@ -115,7 +119,6 @@ class DatastoreTransaction {
   dynamic readAlreadyCommitted(Path path);
   map<Path, DatastoreDiff> libyangDiff(lllyd_node* a, lllyd_node* b);
   string appendKey(dynamic data, string path);
-  void filterMap(vector<string> moduleNames, map<Path, DatastoreDiff>& map);
   llly_set* findNode(lllyd_node* node, string path);
 
  public:
