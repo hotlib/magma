@@ -54,31 +54,32 @@ void DatastoreState::duplicateForTransaction() {
   }
 }
 
-void DatastoreState::setRootFromTransaction() {
+void DatastoreState::setCommittedRootsFromTransactionRoots() {
   for (const auto& transactionItem : forestInTransaction) {
     if (transactionItem.second == nullptr) {
       continue;
     }
-    setRoot(transactionItem.first, computeRoot(transactionItem.second));
+    setCommittedRoot(
+        transactionItem.first, computeRoot(transactionItem.second));
     setTransactionRoot(transactionItem.first, nullptr);
   }
 }
 
-vector<RootPair> DatastoreState::getRootAndTransactionRootPairs() {
+vector<RootPair> DatastoreState::getCommittedRootAndTransactionRootPairs() {
   vector<RootPair> result;
   for (const auto& transactionItem : forestInTransaction) {
     result.emplace_back(
-        getRoot(transactionItem.first),
+        getCommittedRoot(transactionItem.first),
         forestInTransaction[transactionItem.first]);
   }
   return result;
 }
 
-void DatastoreState::freeRoot() {
+void DatastoreState::freeCommittedRoots() {
   freeData(forest);
 }
 
-void DatastoreState::freeTransactionRoot() {
+void DatastoreState::freeTransactionRoots() {
   freeData(forestInTransaction);
 }
 
@@ -89,11 +90,11 @@ void DatastoreState::freeTransactionRoot(string moduleName) {
   forestInTransaction[moduleName] = nullptr;
 }
 
-lllyd_node* DatastoreState::getRoot(string moduleName) {
+lllyd_node* DatastoreState::getCommittedRoot(string moduleName) {
   return getData(moduleName, forest);
 }
 
-void DatastoreState::setRoot(string moduleName, lllyd_node* newValue) {
+void DatastoreState::setCommittedRoot(string moduleName, lllyd_node* newValue) {
   setData(moduleName, newValue, forest);
 }
 
@@ -117,8 +118,8 @@ void DatastoreState::setTransactionRoot(
 }
 
 DatastoreState::~DatastoreState() {
-  freeRoot();
-  freeTransactionRoot();
+  freeCommittedRoots();
+  freeTransactionRoots();
 }
 
 DatastoreState::DatastoreState(llly_ctx* _ctx, DatastoreType _type)

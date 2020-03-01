@@ -28,7 +28,7 @@ bool DatastoreTransaction::delete_(Path p) {
   }
 
   if (Path::ROOT == p && !p.getFirstModuleName().hasValue()) {
-    datastoreState->freeTransactionRoot(); // delete all trees
+    datastoreState->freeTransactionRoots(); // delete all trees
     return true;
   }
 
@@ -153,15 +153,15 @@ void DatastoreTransaction::commit() {
   checkIfCommitted();
 
   validateBeforeCommit();
-  datastoreState->freeRoot(); // free existing trees
-  datastoreState->setRootFromTransaction(); // set all new trees
+  datastoreState->freeCommittedRoots(); // free existing trees
+  datastoreState->setCommittedRootsFromTransactionRoots(); // set all new trees
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
 }
 
 void DatastoreTransaction::abort() {
   checkIfCommitted();
-  datastoreState->freeTransactionRoot(); // free all trees in transaction
+  datastoreState->freeTransactionRoots(); // free all trees in transaction
   hasCommited.store(true);
   datastoreState->transactionUnderway.store(false);
 }
@@ -184,7 +184,7 @@ void DatastoreTransaction::print(lllyd_node* nodeToPrint) {
 
 void DatastoreTransaction::print() {
   for (const auto& rootPair :
-       datastoreState->getRootAndTransactionRootPairs()) {
+       datastoreState->getCommittedRootAndTransactionRootPairs()) {
     print(rootPair.second);
   }
 }
@@ -215,7 +215,7 @@ map<Path, DatastoreDiff> DatastoreTransaction::diff() {
   map<Path, DatastoreDiff> allDiffs;
 
   const vector<RootPair>& pairs =
-      datastoreState->getRootAndTransactionRootPairs();
+      datastoreState->getCommittedRootAndTransactionRootPairs();
 
   // first - datastore root
   // second - transaction root
@@ -427,7 +427,7 @@ vector<DiffPath> DatastoreTransaction::pickClosestPath(
 
 DatastoreTransaction::~DatastoreTransaction() {
   if (not hasCommited) { // TODO this condition is obsolete I think
-    datastoreState->freeTransactionRoot();
+    datastoreState->freeTransactionRoots();
   }
   datastoreState->transactionUnderway.store(false);
 }
@@ -543,8 +543,9 @@ dynamic DatastoreTransaction::readAlreadyCommitted(Path path) {
     throw DatastoreException(
         "Unable to determine which tree to read from, path with module name needed");
   }
-  const dynamic& aDynamic =
-      read(path, datastoreState->getRoot(path.getFirstModuleName().value()));
+  const dynamic& aDynamic = read(
+      path,
+      datastoreState->getCommittedRoot(path.getFirstModuleName().value()));
   if (aDynamic == nullptr) {
     return dynamic::object(); // for diffs we need an empty object
   }
@@ -603,7 +604,8 @@ bool DatastoreTransaction::isValid() {
 
   bool isValid = true;
 
-  for (const auto& pair : datastoreState->getRootAndTransactionRootPairs()) {
+  for (const auto& pair :
+       datastoreState->getCommittedRootAndTransactionRootPairs()) {
     lllyd_node* nodeToValidate = pair.second;
     isValid = isValid &&
         (lllyd_validate(&nodeToValidate, datastoreTypeToLydOption(), nullptr) ==
