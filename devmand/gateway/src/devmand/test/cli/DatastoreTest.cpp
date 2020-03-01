@@ -316,33 +316,33 @@ TEST_F(DatastoreTest, changeLeafDiff) {
   const std::multimap<Path, DatastoreDiff>& multimap =
       transaction->diff(paths).diffs;
 
-    EXPECT_EQ(
-        multimap.begin()->first.str(),
-        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters");
-    EXPECT_EQ(
-        multimap.begin()->second.keyedPath.str(),
-        "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters");
-    EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
-    EXPECT_EQ(
-        multimap.begin()
-            ->second.before["openconfig-interfaces:counters"]["out-errors"]
-            .asString(),
-        "0");
-    EXPECT_EQ(
-        multimap.begin()
-            ->second.before["openconfig-interfaces:counters"]["out-discards"]
-            .asString(),
-        "0");
-    EXPECT_EQ(
-        multimap.begin()
-            ->second.after["openconfig-interfaces:counters"]["out-errors"]
-            .asString(),
-        "777");
-    EXPECT_EQ(
-        multimap.begin()
-            ->second.after["openconfig-interfaces:counters"]["out-discards"]
-            .asString(),
-        "17");
+  EXPECT_EQ(
+      multimap.begin()->first.str(),
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface/openconfig-interfaces:state/openconfig-interfaces:counters");
+  EXPECT_EQ(
+      multimap.begin()->second.keyedPath.str(),
+      "/openconfig-interfaces:interfaces/openconfig-interfaces:interface[name='0/2']/openconfig-interfaces:state/openconfig-interfaces:counters");
+  EXPECT_EQ(multimap.begin()->second.type, DatastoreDiffType::update);
+  EXPECT_EQ(
+      multimap.begin()
+          ->second.before["openconfig-interfaces:counters"]["out-errors"]
+          .asString(),
+      "0");
+  EXPECT_EQ(
+      multimap.begin()
+          ->second.before["openconfig-interfaces:counters"]["out-discards"]
+          .asString(),
+      "0");
+  EXPECT_EQ(
+      multimap.begin()
+          ->second.after["openconfig-interfaces:counters"]["out-errors"]
+          .asString(),
+      "777");
+  EXPECT_EQ(
+      multimap.begin()
+          ->second.after["openconfig-interfaces:counters"]["out-discards"]
+          .asString(),
+      "17");
 }
 
 TEST_F(DatastoreTest, deleteSubtreeDiff) {

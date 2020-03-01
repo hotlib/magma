@@ -81,6 +81,7 @@ struct DatastoreState {
         continue;
       }
       setRoot(transactionItem.first, computeRoot(transactionItem.second));
+      setTransactionRoot(transactionItem.first, nullptr);
     }
   }
 
@@ -135,18 +136,13 @@ struct DatastoreState {
   }
 
   virtual ~DatastoreState() {
-    if (getRoot("root") != nullptr) { // TODO freeData pre vsetko
-      lllyd_free(getRoot("root"));
-    }
+    freeRoot();
+    freeTransactionRoot();
   }
 
  public:
   DatastoreState(llly_ctx* _ctx, DatastoreType _type)
       : ctx(_ctx), type(_type) {}
-
-  bool isEmpty() {
-    return getRoot("root") == nullptr || ctx == nullptr;
-  }
 };
 
 typedef struct DatastoreState DatastoreState;

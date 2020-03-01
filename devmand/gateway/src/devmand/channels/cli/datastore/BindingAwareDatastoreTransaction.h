@@ -42,7 +42,6 @@ class BindingAwareDatastoreTransaction {
   void print();
   void commit();
   void abort();
-
 };
 
 } // namespace devmand::channels::cli::datastore

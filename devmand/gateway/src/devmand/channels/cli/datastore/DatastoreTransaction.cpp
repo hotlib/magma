@@ -353,7 +353,8 @@ bool DatastoreTransaction::shouldHandleSubtree(
 bool DatastoreTransaction::isExactPath(
     const DiffPath& registeredPath,
     const Path& changedPath) {
-  return registeredPath.path.unkeyed().unprefixAllSegments() ==  changedPath.unkeyed().unprefixAllSegments();
+  return registeredPath.path.unkeyed().unprefixAllSegments() ==
+      changedPath.unkeyed().unprefixAllSegments();
 }
 
 bool DatastoreTransaction::isAboveChange(
