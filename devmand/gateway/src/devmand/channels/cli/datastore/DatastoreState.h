@@ -32,117 +32,24 @@ struct DatastoreState {
   LydMap forest;
   LydMap forestInTransaction;
 
-  lllyd_node* getData(string moduleName, LydMap& source) {
-    if (!source.count(moduleName)) {
-      lllyd_node* newRoot = nullptr;
-      source.insert(LydPair(moduleName, newRoot));
-    }
-
-    return source[moduleName];
-  }
-
-  void setData(string moduleName, lllyd_node* newValue, LydMap& source) {
-    if (!source.count(moduleName)) {
-      lllyd_node* newRoot = nullptr;
-      source.insert(LydPair(moduleName, newRoot));
-    }
-
-    source[moduleName] = newValue;
-  }
-
-  void freeData(LydMap& source) {
-    for (const auto& item : source) {
-      if (item.second != nullptr) {
-        lllyd_free(item.second);
-      }
-      source[item.first] = nullptr;
-    }
-  }
-
-  lllyd_node* computeRoot(lllyd_node* n) {
-    while (n->parent != nullptr) {
-      n = n->parent;
-    }
-    return n;
-  }
-
-  void duplicateForTransaction() {
-    for (const auto& item : forest) {
-      if (item.second == nullptr) {
-        continue;
-      }
-      setTransactionRoot(item.first, lllyd_dup(item.second, 1));
-    }
-  }
-
-  void setRootFromTransaction() {
-    for (const auto& transactionItem : forestInTransaction) {
-      if (transactionItem.second == nullptr) {
-        continue;
-      }
-      setRoot(transactionItem.first, computeRoot(transactionItem.second));
-      setTransactionRoot(transactionItem.first, nullptr);
-    }
-  }
-
-  vector<RootPair> getRootAndTransactionRootPairs() {
-    vector<RootPair> result;
-    for (const auto& transactionItem : forestInTransaction) {
-      result.emplace_back(
-          getRoot(transactionItem.first),
-          forestInTransaction[transactionItem.first]);
-    }
-    return result;
-  }
-
-  void freeRoot() {
-    freeData(forest);
-  }
-
-  void freeTransactionRoot() {
-    freeData(forestInTransaction);
-  }
-
-  void freeTransactionRoot(string moduleName) {
-    if (forestInTransaction[moduleName] != nullptr) {
-      lllyd_free(forestInTransaction[moduleName]);
-    }
-    forestInTransaction[moduleName] = nullptr;
-  }
-
-  lllyd_node* getRoot(string moduleName) {
-    return getData(moduleName, forest);
-  }
-
-  void setRoot(string moduleName, lllyd_node* newValue) {
-    setData(moduleName, newValue, forest);
-  }
-
-  lllyd_node* getTransactionRoot(string moduleName) {
-    return getData(moduleName, forestInTransaction);
-  }
-
-  bool nothingInTransaction() {
-    for (const auto& item : forestInTransaction) {
-      if (forestInTransaction[item.first] != nullptr) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  void setTransactionRoot(string moduleName, lllyd_node* newValue) {
-    setData(moduleName, newValue, forestInTransaction);
-  }
-
-  virtual ~DatastoreState() {
-    freeRoot();
-    freeTransactionRoot();
-  }
-
  public:
-  DatastoreState(llly_ctx* _ctx, DatastoreType _type)
-      : ctx(_ctx), type(_type) {}
+  lllyd_node* getData(string moduleName, LydMap& source);
+  void setData(string moduleName, lllyd_node* newValue, LydMap& source);
+  void freeData(LydMap& source);
+  lllyd_node* computeRoot(lllyd_node* n);
+  void duplicateForTransaction();
+  void setRootFromTransaction();
+  vector<RootPair> getRootAndTransactionRootPairs();
+  void freeRoot();
+  void freeTransactionRoot();
+  void freeTransactionRoot(string moduleName);
+  lllyd_node* getRoot(string moduleName);
+  void setRoot(string moduleName, lllyd_node* newValue);
+  lllyd_node* getTransactionRoot(string moduleName);
+  bool nothingInTransaction();
+  void setTransactionRoot(string moduleName, lllyd_node* newValue);
+  virtual ~DatastoreState();
+  DatastoreState(llly_ctx* _ctx, DatastoreType _type);
 };
 
 typedef struct DatastoreState DatastoreState;

@@ -146,14 +146,15 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/TreeCache.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/Datastore.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreTransaction.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastoreTransaction.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreDiff.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastore.cpp
-  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastore.h)
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastore.h
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.h)
 
 target_link_libraries(devman_channel_cli
   devman)
