@@ -160,6 +160,8 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/BindingAwareDatastore.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/Common.pb.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/Common.grpc.pb.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/CloudApi.pb.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/CloudApi.grpc.pb.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/ReaderPlugin.pb.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/ReaderPlugin.grpc.pb.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/plugin/protocpp/WriterPlugin.pb.cpp
@@ -172,6 +174,7 @@ add_library(devman_channel_cli
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/translation/GrpcCliHandler.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/translation/GrpcPlugin.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/DeviceType.cpp
+  ${PROJECT_SOURCE_DIR}/src/devmand/devices/cli/CloudApiUploader.h
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/channels/cli/datastore/DatastoreState.h)
 

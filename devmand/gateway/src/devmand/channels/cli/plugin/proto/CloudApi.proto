@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+
+package devmand.channels.cli.cloudapi;
+
+service DataReceiver {
+    rpc sendData (DataRequest) returns (google.protobuf.Empty) {}
+}
+
+message DataRequest {
+    string deviceName = 1;
+    string deviceData = 2;
+}
