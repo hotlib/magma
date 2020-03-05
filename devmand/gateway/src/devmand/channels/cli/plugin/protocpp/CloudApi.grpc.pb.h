@@ -26,7 +26,7 @@ class ServerContext;
 namespace devmand {
 namespace channels {
 namespace cli {
-namespace cloudapi {
+namespace plugin {
 
 class DataReceiver GRPC_FINAL {
  public:
@@ -35,13 +35,13 @@ class DataReceiver GRPC_FINAL {
     virtual ~StubInterface() {}
     virtual ::grpc::Status sendData(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::google::protobuf::Empty* response) = 0;
     std::unique_ptr<
         ::grpc::ClientAsyncResponseReaderInterface<::google::protobuf::Empty>>
     AsyncsendData(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<::grpc::ClientAsyncResponseReaderInterface<
           ::google::protobuf::Empty>>(AsyncsendDataRaw(context, request, cq));
@@ -52,7 +52,7 @@ class DataReceiver GRPC_FINAL {
         ::google::protobuf::Empty>*
     AsyncsendDataRaw(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub GRPC_FINAL : public StubInterface {
@@ -60,13 +60,13 @@ class DataReceiver GRPC_FINAL {
     Stub(const std::shared_ptr<::grpc::ChannelInterface>& channel);
     ::grpc::Status sendData(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::google::protobuf::Empty* response) GRPC_OVERRIDE;
     std::unique_ptr<
         ::grpc::ClientAsyncResponseReader<::google::protobuf::Empty>>
     AsyncsendData(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::grpc::CompletionQueue* cq) {
       return std::unique_ptr<
           ::grpc::ClientAsyncResponseReader<::google::protobuf::Empty>>(
@@ -78,7 +78,7 @@ class DataReceiver GRPC_FINAL {
     ::grpc::ClientAsyncResponseReader<::google::protobuf::Empty>*
     AsyncsendDataRaw(
         ::grpc::ClientContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest& request,
+        const ::devmand::channels::cli::plugin::DataRequest& request,
         ::grpc::CompletionQueue* cq) GRPC_OVERRIDE;
     const ::grpc::RpcMethod rpcmethod_sendData_;
   };
@@ -92,7 +92,7 @@ class DataReceiver GRPC_FINAL {
     virtual ~Service();
     virtual ::grpc::Status sendData(
         ::grpc::ServerContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest* request,
+        const ::devmand::channels::cli::plugin::DataRequest* request,
         ::google::protobuf::Empty* response);
   };
   template <class BaseClass>
@@ -110,14 +110,14 @@ class DataReceiver GRPC_FINAL {
     // disable synchronous version of this method
     ::grpc::Status sendData(
         ::grpc::ServerContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest* request,
+        const ::devmand::channels::cli::plugin::DataRequest* request,
         ::google::protobuf::Empty* response) GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestsendData(
         ::grpc::ServerContext* context,
-        ::devmand::channels::cli::cloudapi::DataRequest* request,
+        ::devmand::channels::cli::plugin::DataRequest* request,
         ::grpc::ServerAsyncResponseWriter<::google::protobuf::Empty>* response,
         ::grpc::CompletionQueue* new_call_cq,
         ::grpc::ServerCompletionQueue* notification_cq,
@@ -142,7 +142,7 @@ class DataReceiver GRPC_FINAL {
     // disable synchronous version of this method
     ::grpc::Status sendData(
         ::grpc::ServerContext* context,
-        const ::devmand::channels::cli::cloudapi::DataRequest* request,
+        const ::devmand::channels::cli::plugin::DataRequest* request,
         ::google::protobuf::Empty* response) GRPC_FINAL GRPC_OVERRIDE {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
@@ -150,7 +150,7 @@ class DataReceiver GRPC_FINAL {
   };
 };
 
-} // namespace cloudapi
+} // namespace plugin
 } // namespace cli
 } // namespace channels
 } // namespace devmand

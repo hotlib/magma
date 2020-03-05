@@ -22,7 +22,7 @@
 namespace devmand {
 namespace channels {
 namespace cli {
-namespace cloudapi {
+namespace plugin {
 
 namespace {
 
@@ -91,13 +91,13 @@ void protobuf_AddDesc_CloudApi_2eproto() {
 
   ::google::protobuf::protobuf_AddDesc_google_2fprotobuf_2fempty_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-      "\n\016CloudApi.proto\022\035devmand.channels.cli.c"
-      "loudapi\032\033google/protobuf/empty.proto\"5\n\013"
-      "DataRequest\022\022\n\ndeviceName\030\001 \001(\t\022\022\n\ndevic"
-      "eData\030\002 \001(\t2`\n\014DataReceiver\022P\n\010sendData\022"
-      "*.devmand.channels.cli.cloudapi.DataRequ"
-      "est\032\026.google.protobuf.Empty\"\000b\006proto3",
-      237);
+      "\n\016CloudApi.proto\022\033devmand.channels.cli.p"
+      "lugin\032\033google/protobuf/empty.proto\"5\n\013Da"
+      "taRequest\022\022\n\ndeviceName\030\001 \001(\t\022\022\n\ndeviceD"
+      "ata\030\002 \001(\t2^\n\014DataReceiver\022N\n\010sendData\022(."
+      "devmand.channels.cli.plugin.DataRequest\032"
+      "\026.google.protobuf.Empty\"\000b\006proto3",
+      233);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
       "CloudApi.proto", &protobuf_RegisterTypes);
   DataRequest::default_instance_ = new DataRequest();
@@ -123,7 +123,7 @@ const int DataRequest::kDeviceDataFieldNumber;
 DataRequest::DataRequest()
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
-  // @@protoc_insertion_point(constructor:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(constructor:devmand.channels.cli.plugin.DataRequest)
 }
 
 void DataRequest::InitAsDefaultInstance() {
@@ -134,7 +134,7 @@ DataRequest::DataRequest(const DataRequest& from)
     : ::google::protobuf::Message(), _internal_metadata_(NULL) {
   SharedCtor();
   MergeFrom(from);
-  // @@protoc_insertion_point(copy_constructor:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(copy_constructor:devmand.channels.cli.plugin.DataRequest)
 }
 
 void DataRequest::SharedCtor() {
@@ -148,7 +148,7 @@ void DataRequest::SharedCtor() {
 }
 
 DataRequest::~DataRequest() {
-  // @@protoc_insertion_point(destructor:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(destructor:devmand.channels.cli.plugin.DataRequest)
   SharedDtor();
 }
 
@@ -188,7 +188,7 @@ DataRequest* DataRequest::New(::google::protobuf::Arena* arena) const {
 }
 
 void DataRequest::Clear() {
-  // @@protoc_insertion_point(message_clear_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(message_clear_start:devmand.channels.cli.plugin.DataRequest)
   devicename_.ClearToEmptyNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
   devicedata_.ClearToEmptyNoArena(
@@ -201,7 +201,7 @@ bool DataRequest::MergePartialFromCodedStream(
   if (!GOOGLE_PREDICT_TRUE(EXPRESSION)) \
   goto failure
   ::google::protobuf::uint32 tag;
-  // @@protoc_insertion_point(parse_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(parse_start:devmand.channels.cli.plugin.DataRequest)
   for (;;) {
     ::std::pair<::google::protobuf::uint32, bool> p =
         input->ReadTagWithCutoff(127);
@@ -219,7 +219,7 @@ bool DataRequest::MergePartialFromCodedStream(
               this->devicename().data(),
 (int)              this->devicename().length(),
               ::google::protobuf::internal::WireFormatLite::PARSE,
-              "devmand.channels.cli.cloudapi.DataRequest.deviceName"));
+              "devmand.channels.cli.plugin.DataRequest.deviceName"));
         } else {
           goto handle_unusual;
         }
@@ -238,7 +238,7 @@ bool DataRequest::MergePartialFromCodedStream(
               this->devicedata().data(),
 (int)              this->devicedata().length(),
               ::google::protobuf::internal::WireFormatLite::PARSE,
-              "devmand.channels.cli.cloudapi.DataRequest.deviceData"));
+              "devmand.channels.cli.plugin.DataRequest.deviceData"));
         } else {
           goto handle_unusual;
         }
@@ -262,10 +262,10 @@ bool DataRequest::MergePartialFromCodedStream(
     }
   }
 success:
-  // @@protoc_insertion_point(parse_success:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(parse_success:devmand.channels.cli.plugin.DataRequest)
   return true;
 failure:
-  // @@protoc_insertion_point(parse_failure:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(parse_failure:devmand.channels.cli.plugin.DataRequest)
   return false;
 #undef DO_
 }
@@ -273,14 +273,14 @@ failure:
 void DataRequest::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   (void)output;
-  // @@protoc_insertion_point(serialize_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(serialize_start:devmand.channels.cli.plugin.DataRequest)
   // optional string deviceName = 1;
   if (this->devicename().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
         this->devicename().data(),
 (int)        this->devicename().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "devmand.channels.cli.cloudapi.DataRequest.deviceName");
+        "devmand.channels.cli.plugin.DataRequest.deviceName");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
         1, this->devicename(), output);
   }
@@ -291,26 +291,26 @@ void DataRequest::SerializeWithCachedSizes(
         this->devicedata().data(),
 (int)        this->devicedata().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "devmand.channels.cli.cloudapi.DataRequest.deviceData");
+        "devmand.channels.cli.plugin.DataRequest.deviceData");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
         2, this->devicedata(), output);
   }
 
-  // @@protoc_insertion_point(serialize_end:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(serialize_end:devmand.channels.cli.plugin.DataRequest)
 }
 
 ::google::protobuf::uint8* DataRequest::InternalSerializeWithCachedSizesToArray(
     bool deterministic,
     ::google::protobuf::uint8* target) const {
   (void)deterministic;
-  // @@protoc_insertion_point(serialize_to_array_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(serialize_to_array_start:devmand.channels.cli.plugin.DataRequest)
   // optional string deviceName = 1;
   if (this->devicename().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
         this->devicename().data(),
 (int)        this->devicename().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "devmand.channels.cli.cloudapi.DataRequest.deviceName");
+        "devmand.channels.cli.plugin.DataRequest.deviceName");
     target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         1, this->devicename(), target);
   }
@@ -321,17 +321,17 @@ void DataRequest::SerializeWithCachedSizes(
         this->devicedata().data(),
 (int)        this->devicedata().length(),
         ::google::protobuf::internal::WireFormatLite::SERIALIZE,
-        "devmand.channels.cli.cloudapi.DataRequest.deviceData");
+        "devmand.channels.cli.plugin.DataRequest.deviceData");
     target = ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
         2, this->devicedata(), target);
   }
 
-  // @@protoc_insertion_point(serialize_to_array_end:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(serialize_to_array_end:devmand.channels.cli.plugin.DataRequest)
   return target;
 }
 
 int DataRequest::ByteSize() const {
-  // @@protoc_insertion_point(message_byte_size_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(message_byte_size_start:devmand.channels.cli.plugin.DataRequest)
   int total_size = 0;
 
   // optional string deviceName = 1;
@@ -355,7 +355,7 @@ int DataRequest::ByteSize() const {
 }
 
 void DataRequest::MergeFrom(const ::google::protobuf::Message& from) {
-  // @@protoc_insertion_point(generalized_merge_from_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(generalized_merge_from_start:devmand.channels.cli.plugin.DataRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
@@ -363,16 +363,16 @@ void DataRequest::MergeFrom(const ::google::protobuf::Message& from) {
       ::google::protobuf::internal::DynamicCastToGenerated<const DataRequest>(
           &from);
   if (source == NULL) {
-    // @@protoc_insertion_point(generalized_merge_from_cast_fail:devmand.channels.cli.cloudapi.DataRequest)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:devmand.channels.cli.plugin.DataRequest)
     ::google::protobuf::internal::ReflectionOps::Merge(from, this);
   } else {
-    // @@protoc_insertion_point(generalized_merge_from_cast_success:devmand.channels.cli.cloudapi.DataRequest)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:devmand.channels.cli.plugin.DataRequest)
     MergeFrom(*source);
   }
 }
 
 void DataRequest::MergeFrom(const DataRequest& from) {
-  // @@protoc_insertion_point(class_specific_merge_from_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(class_specific_merge_from_start:devmand.channels.cli.plugin.DataRequest)
   if (GOOGLE_PREDICT_FALSE(&from == this)) {
     ::google::protobuf::internal::MergeFromFail(__FILE__, __LINE__);
   }
@@ -389,7 +389,7 @@ void DataRequest::MergeFrom(const DataRequest& from) {
 }
 
 void DataRequest::CopyFrom(const ::google::protobuf::Message& from) {
-  // @@protoc_insertion_point(generalized_copy_from_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(generalized_copy_from_start:devmand.channels.cli.plugin.DataRequest)
   if (&from == this)
     return;
   Clear();
@@ -397,7 +397,7 @@ void DataRequest::CopyFrom(const ::google::protobuf::Message& from) {
 }
 
 void DataRequest::CopyFrom(const DataRequest& from) {
-  // @@protoc_insertion_point(class_specific_copy_from_start:devmand.channels.cli.cloudapi.DataRequest)
+  // @@protoc_insertion_point(class_specific_copy_from_start:devmand.channels.cli.plugin.DataRequest)
   if (&from == this)
     return;
   Clear();
@@ -437,34 +437,34 @@ void DataRequest::clear_devicename() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 const ::std::string& DataRequest::devicename() const {
-  // @@protoc_insertion_point(field_get:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_get:devmand.channels.cli.plugin.DataRequest.deviceName)
   return devicename_.GetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 void DataRequest::set_devicename(const ::std::string& value) {
   devicename_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_set:devmand.channels.cli.plugin.DataRequest.deviceName)
 }
 void DataRequest::set_devicename(const char* value) {
   devicename_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_set_char:devmand.channels.cli.plugin.DataRequest.deviceName)
 }
 void DataRequest::set_devicename(const char* value, size_t size) {
   devicename_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_set_pointer:devmand.channels.cli.plugin.DataRequest.deviceName)
 }
 ::std::string* DataRequest::mutable_devicename() {
-  // @@protoc_insertion_point(field_mutable:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_mutable:devmand.channels.cli.plugin.DataRequest.deviceName)
   return devicename_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* DataRequest::release_devicename() {
-  // @@protoc_insertion_point(field_release:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_release:devmand.channels.cli.plugin.DataRequest.deviceName)
 
   return devicename_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -475,7 +475,7 @@ void DataRequest::set_allocated_devicename(::std::string* devicename) {
   }
   devicename_.SetAllocatedNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), devicename);
-  // @@protoc_insertion_point(field_set_allocated:devmand.channels.cli.cloudapi.DataRequest.deviceName)
+  // @@protoc_insertion_point(field_set_allocated:devmand.channels.cli.plugin.DataRequest.deviceName)
 }
 
 // optional string deviceData = 2;
@@ -484,34 +484,34 @@ void DataRequest::clear_devicedata() {
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 const ::std::string& DataRequest::devicedata() const {
-  // @@protoc_insertion_point(field_get:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_get:devmand.channels.cli.plugin.DataRequest.deviceData)
   return devicedata_.GetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 void DataRequest::set_devicedata(const ::std::string& value) {
   devicedata_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
-  // @@protoc_insertion_point(field_set:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_set:devmand.channels.cli.plugin.DataRequest.deviceData)
 }
 void DataRequest::set_devicedata(const char* value) {
   devicedata_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_set_char:devmand.channels.cli.plugin.DataRequest.deviceData)
 }
 void DataRequest::set_devicedata(const char* value, size_t size) {
   devicedata_.SetNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_set_pointer:devmand.channels.cli.plugin.DataRequest.deviceData)
 }
 ::std::string* DataRequest::mutable_devicedata() {
-  // @@protoc_insertion_point(field_mutable:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_mutable:devmand.channels.cli.plugin.DataRequest.deviceData)
   return devicedata_.MutableNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 ::std::string* DataRequest::release_devicedata() {
-  // @@protoc_insertion_point(field_release:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_release:devmand.channels.cli.plugin.DataRequest.deviceData)
 
   return devicedata_.ReleaseNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -522,14 +522,14 @@ void DataRequest::set_allocated_devicedata(::std::string* devicedata) {
   }
   devicedata_.SetAllocatedNoArena(
       &::google::protobuf::internal::GetEmptyStringAlreadyInited(), devicedata);
-  // @@protoc_insertion_point(field_set_allocated:devmand.channels.cli.cloudapi.DataRequest.deviceData)
+  // @@protoc_insertion_point(field_set_allocated:devmand.channels.cli.plugin.DataRequest.deviceData)
 }
 
 #endif // PROTOBUF_INLINE_NOT_IN_HEADERS
 
 // @@protoc_insertion_point(namespace_scope)
 
-} // namespace cloudapi
+} // namespace plugin
 } // namespace cli
 } // namespace channels
 } // namespace devmand

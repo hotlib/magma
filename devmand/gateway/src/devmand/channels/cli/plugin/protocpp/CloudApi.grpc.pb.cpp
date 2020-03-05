@@ -16,10 +16,10 @@
 namespace devmand {
 namespace channels {
 namespace cli {
-namespace cloudapi {
+namespace plugin {
 
 static const char* DataReceiver_method_names[] = {
-    "/devmand.channels.cli.cloudapi.DataReceiver/sendData",
+    "/devmand.channels.cli.plugin.DataReceiver/sendData",
 };
 
 std::unique_ptr<DataReceiver::Stub> DataReceiver::NewStub(
@@ -40,7 +40,7 @@ DataReceiver::Stub::Stub(
 
 ::grpc::Status DataReceiver::Stub::sendData(
     ::grpc::ClientContext* context,
-    const ::devmand::channels::cli::cloudapi::DataRequest& request,
+    const ::devmand::channels::cli::plugin::DataRequest& request,
     ::google::protobuf::Empty* response) {
   return ::grpc::BlockingUnaryCall(
       channel_.get(), rpcmethod_sendData_, context, request, response);
@@ -49,7 +49,7 @@ DataReceiver::Stub::Stub(
 ::grpc::ClientAsyncResponseReader<::google::protobuf::Empty>*
 DataReceiver::Stub::AsyncsendDataRaw(
     ::grpc::ClientContext* context,
-    const ::devmand::channels::cli::cloudapi::DataRequest& request,
+    const ::devmand::channels::cli::plugin::DataRequest& request,
     ::grpc::CompletionQueue* cq) {
   return new ::grpc::ClientAsyncResponseReader<::google::protobuf::Empty>(
       channel_.get(), cq, rpcmethod_sendData_, context, request);
@@ -62,7 +62,7 @@ DataReceiver::Service::Service() {
       ::grpc::RpcMethod::NORMAL_RPC,
       new ::grpc::RpcMethodHandler<
           DataReceiver::Service,
-          ::devmand::channels::cli::cloudapi::DataRequest,
+          ::devmand::channels::cli::plugin::DataRequest,
           ::google::protobuf::Empty>(
           std::mem_fn(&DataReceiver::Service::sendData), this)));
 }
@@ -71,7 +71,7 @@ DataReceiver::Service::~Service() {}
 
 ::grpc::Status DataReceiver::Service::sendData(
     ::grpc::ServerContext* context,
-    const ::devmand::channels::cli::cloudapi::DataRequest* request,
+    const ::devmand::channels::cli::plugin::DataRequest* request,
     ::google::protobuf::Empty* response) {
   (void)context;
   (void)request;
@@ -79,7 +79,7 @@ DataReceiver::Service::~Service() {}
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-} // namespace cloudapi
+} // namespace plugin
 } // namespace cli
 } // namespace channels
 } // namespace devmand

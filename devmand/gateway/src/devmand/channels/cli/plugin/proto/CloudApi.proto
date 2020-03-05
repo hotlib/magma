@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/empty.proto";
 
-package devmand.channels.cli.cloudapi;
+package devmand.channels.cli.plugin;
 
 service DataReceiver {
     rpc sendData (DataRequest) returns (google.protobuf.Empty) {}
