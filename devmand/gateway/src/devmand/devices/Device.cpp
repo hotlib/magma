@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include <folly/json.h>
+#include <folly/FileUtil.h>
 
 #include <devmand/Application.h>
 #include <devmand/Config.h>
@@ -93,6 +94,7 @@ void Device::updateSharedView(SharedUnifiedView& sharedUnifiedView) {
 
               uploader->uploadData(idL, folly::toJson(data));
               LOG(INFO) << "state for " << idL << " is " << folly::toJson(data);
+              folly::writeFileAtomic("./" + idL + "device_state.json", folly::toPrettyJson(data));
             });
           }));
 }

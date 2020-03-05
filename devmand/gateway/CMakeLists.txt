@@ -265,6 +265,10 @@ target_link_libraries(devmand
   devman_service_fscache
   devman_service_magma)
 
+file(COPY js_plugins DESTINATION .)
+file(COPY src/devmand/channels/cli/plugin/proto DESTINATION ./js_plugins)
+file(COPY doc/config-sample DESTINATION .)
+
 add_executable(devmantest
   ${PROJECT_SOURCE_DIR}/src/devmand/test/ConfigGeneratorTest.cpp
   ${PROJECT_SOURCE_DIR}/src/devmand/test/cli/RealCliDeviceTest.cpp
