@@ -10,6 +10,8 @@
 #define LOG_WITH_GLOG
 #include <magma_logging.h>
 
+#include <devmand/devices/cli/CloudApiUploader.h>
+
 #include <devmand/channels/Engine.h>
 #include <devmand/channels/cli/CliThreadWheelTimekeeper.h>
 #include <devmand/devices/cli/schema/ModelRegistry.h>
@@ -29,6 +31,7 @@ using namespace std;
 using devmand::channels::cli::CliThreadWheelTimekeeper;
 using devmand::devices::cli::ModelRegistry;
 using namespace devmand::devices::cli;
+using devmand::devices::cli::CloudApiUploader;
 
 static atomic<bool> loggingInitialized(false);
 static atomic<bool> sshInitialized(false);
@@ -77,6 +80,7 @@ class Engine : public channels::Engine {
  private:
   shared_ptr<ModelRegistry> mreg;
   unique_ptr<PluginRegistry> pluginRegistry;
+  shared_ptr<CloudApiUploader> cloudApiUploader;
 
  public:
   /*
@@ -96,6 +100,8 @@ class Engine : public channels::Engine {
       shared_ptr<DeviceContext> deviceCtx);
 
   shared_ptr<CliFlavour> getCliFlavour(const DeviceType& deviceType);
+
+  shared_ptr<CloudApiUploader> getCloudApiUploader();
 };
 
 } // namespace cli

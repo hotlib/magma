@@ -159,7 +159,8 @@ Engine::Engine(folly::dynamic pluginConfig)
           CPU_CORES,
           std::make_shared<folly::NamedThreadFactory>("plugin"))),
       mreg(make_shared<ModelRegistry>()),
-      pluginRegistry(loadPlugins(mreg, pluginConfig, pluginExecutor)) {
+      pluginRegistry(loadPlugins(mreg, pluginConfig, pluginExecutor)),
+      cloudApiUploader(std::make_shared<CloudApiUploader>("localhost:50051")) {
   // TODO use singleton instead of new ThreadWheelTimekeeper when folly is
   // initialized
   Engine::initSsh();
@@ -215,6 +216,10 @@ unique_ptr<WriterRegistry> Engine::getWriterRegistry(
 
 shared_ptr<CliFlavour> Engine::getCliFlavour(const DeviceType& deviceType) {
   return pluginRegistry->getCliFlavour(deviceType);
+}
+
+shared_ptr<CloudApiUploader> Engine::getCloudApiUploader() {
+     return cloudApiUploader;
 }
 
 } // namespace cli
