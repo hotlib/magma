@@ -18,6 +18,7 @@
 #include <devmand/cartography/DeviceConfig.h>
 #include <devmand/devices/Datastore.h>
 #include <devmand/devices/Id.h>
+#include <devmand/devices/cli/CloudApiUploader.h>
 #include <devmand/error/ErrorQueue.h>
 #include <devmand/utils/YangUtils.h>
 
@@ -26,6 +27,7 @@ namespace devmand {
 class Application;
 
 namespace devices {
+using devmand::devices::cli::CloudApiUploader;
 
 enum class DeviceConfigType { YangJson, NativeConfigJson };
 
@@ -94,6 +96,7 @@ class Device : public std::enable_shared_from_this<Device> {
   folly::dynamic runningDatastore;
   folly::dynamic intendedDatastore;
   folly::dynamic operationalDatastore;
+  std::shared_ptr<CloudApiUploader> uploader;
   // TODO std::map<std::string, Platform> platforms;
 };
 

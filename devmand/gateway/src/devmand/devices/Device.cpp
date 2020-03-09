@@ -9,21 +9,20 @@
 
 #include <iostream>
 
-#include <folly/json.h>
 #include <folly/FileUtil.h>
+#include <folly/json.h>
 
 #include <devmand/Application.h>
 #include <devmand/Config.h>
 #include <devmand/error/ErrorHandler.h>
-#include <devmand/devices/cli/CloudApiUploader.h>
 
 namespace devmand {
 namespace devices {
 
-using devmand::devices::cli::CloudApiUploader;
-
 Device::Device(Application& application, const Id& id_, bool readonly_)
-    : app(application), id(id_), readonly(readonly_) {}
+    : app(application), id(id_), readonly(readonly_) {
+  uploader = this->app.getCliEngine().getCloudApiUploader();
+}
 
 Device::~Device() {
   auto oldHostname =
@@ -53,7 +52,6 @@ folly::dynamic Device::lookup(const YangPath& path) const {
 
 void Device::updateSharedView(SharedUnifiedView& sharedUnifiedView) {
   Id idL = id;
-  const shared_ptr<CloudApiUploader> &uploader = this->app.getCliEngine().getCloudApiUploader();
   std::weak_ptr<Device> weak(shared_from_this());
   ErrorHandler::thenError(
       getOperationalDatastore()
@@ -84,17 +82,19 @@ void Device::updateSharedView(SharedUnifiedView& sharedUnifiedView) {
             }
             return data;
           })
-          .thenValue([&uploader, idL, &sharedUnifiedView](auto data) {
-            sharedUnifiedView.withULockPtr([&uploader, &idL, &data](auto uUnifiedView) {
+          .thenValue([this, idL, &sharedUnifiedView](auto data) {
+            sharedUnifiedView.withULockPtr([this, &idL, &data](
+                                               auto uUnifiedView) {
               auto unifiedView = uUnifiedView.moveFromUpgradeToWrite();
 
               if (unifiedView->insert_or_assign(idL, data).second) {
                 LOG(ERROR) << "Failed to update unified view for " << idL;
               }
 
-              uploader->uploadData(idL, folly::toJson(data));
+              this->uploader->uploadData(idL, folly::toJson(data));
               LOG(INFO) << "state for " << idL << " is " << folly::toJson(data);
-              folly::writeFileAtomic("./" + idL + "device_state.json", folly::toPrettyJson(data));
+              folly::writeFileAtomic(
+                  "./" + idL + "device_state.json", folly::toPrettyJson(data));
             });
           }));
 }

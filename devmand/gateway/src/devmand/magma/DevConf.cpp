@@ -50,13 +50,24 @@ static folly::dynamic loadPluginConfig(
   return folly::dynamic::object();
 }
 
+static string parseCloudAddress(
+    const std::experimental::filesystem::path deviceConfigurationFile,
+    ConfigFileMode mode) {
+  if (mode == ConfigFileMode::Yaml) {
+    YAML::Node devicesFile = YAML::LoadFile(deviceConfigurationFile);
+    return devicesFile["cloudAddress"].Scalar();
+  }
+  return "127.0.0.1:50051"; // default address
+}
+
 DevConf::DevConf(
     folly::EventBase& eventBase,
     const std::string& _deviceConfigurationFile)
     : watcher(eventBase),
       deviceConfigurationFile(_deviceConfigurationFile),
       mode(getConfigFileMode(deviceConfigurationFile.native())),
-      pluginConfig(loadPluginConfig(deviceConfigurationFile, mode)) {}
+      pluginConfig(loadPluginConfig(deviceConfigurationFile, mode)),
+      cloudAddress(parseCloudAddress(deviceConfigurationFile, mode)) {}
 
 void DevConf::enable() {
   // this could go out of scope so handle with a weak ptr.
@@ -292,6 +303,10 @@ cartography::DeviceConfigs DevConf::parseMconfigDeviceConfigs(
 
 folly::dynamic DevConf::getPluginConfig() {
   return pluginConfig;
+}
+
+string DevConf::getCloudAddress() {
+  return cloudAddress;
 }
 
 } // namespace magma

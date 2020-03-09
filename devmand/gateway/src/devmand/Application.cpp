@@ -43,14 +43,17 @@ Application::Application()
 void Application::init(
     const std::shared_ptr<devmand::magma::DevConf>& devConf) {
   folly::dynamic pluginConfig = devConf->getPluginConfig();
+  pluginConfig["cloudAddress"] = devConf->getCloudAddress();
   ErrorHandler::executeWithCatch(
       [this, pluginConfig]() -> void {
         cliEngine = addEngine<channels::cli::Engine>(pluginConfig);
-//        snmpEngine = addEngine<channels::snmp::Engine>(eventBase, name);
-//        pingEngine =
-//            addEngine<channels::ping::Engine>(eventBase, IPVersion::v4);
-//        pingEngineIpv6 =
-//            addEngine<channels::ping::Engine>(eventBase, IPVersion::v6);
+        //        snmpEngine = addEngine<channels::snmp::Engine>(eventBase,
+        //        name); pingEngine =
+        //            addEngine<channels::ping::Engine>(eventBase,
+        //            IPVersion::v4);
+        //        pingEngineIpv6 =
+        //            addEngine<channels::ping::Engine>(eventBase,
+        //            IPVersion::v6);
       },
       [this]() { this->statusCode = EXIT_FAILURE; });
 }
