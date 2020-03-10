@@ -38,7 +38,7 @@ class DevConf : public cartography::Method {
   void enable() override;
 
   folly::dynamic getPluginConfig();
-  string getCloudAddress();
+  std::string getCloudAddress();
 
  private:
   void handleFileWatchEvent(FileWatchEvent event);
@@ -64,7 +64,7 @@ class DevConf : public cartography::Method {
 
   cartography::DeviceConfigs oldDeviceConfigs;
   folly::dynamic pluginConfig;
-  string cloudAddress;
+  std::string cloudAddress;
 };
 
 } // namespace magma
