@@ -27,13 +27,14 @@ using std::unique_ptr;
 
 class CloudApiUploader {
   string endpoint;
+  string apiKey;
   shared_ptr<grpc::Channel> grpcChannel;
   const unique_ptr<DataReceiver::Stub> stub;
   std::mutex mut;
 
  public:
-  CloudApiUploader(const string _endpoint)
-      : endpoint(_endpoint),
+  CloudApiUploader(const string _endpoint, const string _apiKey)
+      : endpoint(_endpoint), apiKey(_apiKey),
         grpcChannel(
             grpc::CreateChannel(endpoint, grpc::InsecureChannelCredentials())),
         stub(DataReceiver::NewStub(grpcChannel)) {}
@@ -41,6 +42,7 @@ class CloudApiUploader {
   void uploadData(string deviceName, string deviceData) {
     mut.lock();
     ClientContext context;
+    context.AddMetadata("api_key", apiKey);
     DataRequest request;
     google::protobuf::Empty empty;
     request.set_devicename(deviceName);

@@ -43,7 +43,8 @@ Application::Application()
 void Application::init(
     const std::shared_ptr<devmand::magma::DevConf>& devConf) {
   folly::dynamic pluginConfig = devConf->getPluginConfig();
-  pluginConfig["cloudAddress"] = devConf->getCloudAddress();
+  pluginConfig["cloudAddress"] = devConf->getCloudConfig().first;
+  pluginConfig["cloudApiKey"] = devConf->getCloudConfig().second;
   ErrorHandler::executeWithCatch(
       [this, pluginConfig]() -> void {
         cliEngine = addEngine<channels::cli::Engine>(pluginConfig);

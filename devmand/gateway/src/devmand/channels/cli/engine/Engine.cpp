@@ -161,7 +161,7 @@ Engine::Engine(folly::dynamic pluginConfig)
       mreg(make_shared<ModelRegistry>()),
       pluginRegistry(loadPlugins(mreg, pluginConfig, pluginExecutor)),
       cloudApiUploader(std::make_shared<CloudApiUploader>(
-          pluginConfig["cloudAddress"].asString())) {
+          pluginConfig["cloudAddress"].asString(), pluginConfig["cloudApiKey"].asString())) {
   // TODO use singleton instead of new ThreadWheelTimekeeper when folly is
   // initialized
   Engine::initSsh();

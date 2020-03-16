@@ -33,3 +33,4 @@ devices:
 pluginConfig: config-sample/plugin.json
 
 cloudAddress: 127.0.0.1:50051
+cloudApiKey: testingapikey

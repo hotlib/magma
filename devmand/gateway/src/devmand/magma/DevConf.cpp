@@ -50,14 +50,16 @@ static folly::dynamic loadPluginConfig(
   return folly::dynamic::object();
 }
 
-static string parseCloudAddress(
+static std::pair<string, string> parseCloudConfig(
     const std::experimental::filesystem::path deviceConfigurationFile,
     ConfigFileMode mode) {
   if (mode == ConfigFileMode::Yaml) {
     YAML::Node devicesFile = YAML::LoadFile(deviceConfigurationFile);
-    return devicesFile["cloudAddress"].Scalar();
+    string cloudAddress = devicesFile["cloudAddress"].Scalar();
+    string cloudApiKey = devicesFile["cloudApiKey"].Scalar();
+    return std::make_pair(cloudAddress, cloudApiKey);
   }
-  return "127.0.0.1:50051"; // default address
+  throw std::runtime_error("no config available"); // TODO how to handle?
 }
 
 DevConf::DevConf(
@@ -67,7 +69,7 @@ DevConf::DevConf(
       deviceConfigurationFile(_deviceConfigurationFile),
       mode(getConfigFileMode(deviceConfigurationFile.native())),
       pluginConfig(loadPluginConfig(deviceConfigurationFile, mode)),
-      cloudAddress(parseCloudAddress(deviceConfigurationFile, mode)) {}
+      cloudConfig(parseCloudConfig(deviceConfigurationFile, mode)) {}
 
 void DevConf::enable() {
   // this could go out of scope so handle with a weak ptr.
@@ -305,8 +307,8 @@ folly::dynamic DevConf::getPluginConfig() {
   return pluginConfig;
 }
 
-string DevConf::getCloudAddress() {
-  return cloudAddress;
+std::pair<string, string> DevConf::getCloudConfig() {
+  return cloudConfig;
 }
 
 } // namespace magma
