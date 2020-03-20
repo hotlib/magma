@@ -4,7 +4,8 @@ dirname="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd ${dirname}
 
 docker run -d -h devmanddevel \
-      --name dvmnd \
+      --name dvmd \
+      --network frinx-machine_default \
       -v "$(realpath ../../):/cache/devmand/repo:rw" \
       -v "$(realpath ~/cache_devmand_build):/cache/devmand/build:rw" \
       --entrypoint /bin/bash \
