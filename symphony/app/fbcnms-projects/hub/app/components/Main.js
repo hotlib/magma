@@ -121,7 +121,7 @@ export default () => {
           <Route path={relativeUrl('/services')} component={Main(false)} />
           <Redirect exact from="/" to={relativeUrl('/hub')} />
           <Redirect exact from="/hub" to={relativeUrl('/services')} />
-          <Route path="/hub/workflows/defs" component={Main(true)} />
+          <Route path="/hub/workflows" component={Main(true)} />
         </Switch>
       </AppContextProvider>
     </ApplicationMain>
