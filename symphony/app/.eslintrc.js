@@ -19,6 +19,9 @@ const combinedOpenSourcePattern = new RegExp(
 module.exports.extends = ['eslint-config-fbcnms'];
 module.exports.overrides = [
   {
+    env: {
+      node: true,
+    },
     files: ['*'],
     rules: {
       'prettier/prettier': [
@@ -58,6 +61,7 @@ module.exports.overrides = [
       'fbcnms-projects/inventory/**/*.js',
       'fbcnms-projects/magmalte/**/*.js',
       'fbcnms-projects/platform-server/**/*.js',
+      'fbcnms-projects/hub/**/*.js',
     ],
     rules: {
       'header/header': [2, 'block', {pattern: combinedOpenSourcePattern}],
