@@ -11,6 +11,7 @@
 import logging from '@fbcnms/logging';
 import streamify from 'stream-array';
 import {JSONPath} from 'jsonpath-plus';
+import {groupsForUser} from './graphqlGroups';
 
 const logger = logging.getLogger(module);
 
@@ -131,6 +132,26 @@ export function getTenantId(req: ProxyRequest): string {
     throw 'Illegal TenantId';
   }
   return tenantId;
+}
+
+export function getUserRole(req: ProxyRequest): string {
+  const role: ?string = req.headers['x-auth-user-role'];
+  if (role == null) {
+    logger.error('x-auth-user-role header not found');
+    throw 'x-auth-user-role header not found';
+  }
+  return role;
+}
+
+export async function getUserGroups(req: ProxyRequest): string[] {
+  const userEmail: ?string = req.headers['x-auth-user-email'];
+  if (userEmail == null) {
+    logger.error('x-auth-user-email header not found');
+    throw 'x-auth-user-email header not found';
+  }
+
+  // FIXME flow
+  return groupsForUser(getTenantId(req), userEmail, getUserRole(req));
 }
 
 export function createProxyOptionsBuffer(
