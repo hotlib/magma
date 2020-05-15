@@ -16,6 +16,7 @@ import {groupsForUser} from './graphqlGroups';
 const logger = logging.getLogger(module);
 
 import type {ProxyRequest, Task} from '../types';
+import Router from "express";
 
 // Global prefix for taskdefs which can be used by all tenants.
 export const GLOBAL_PREFIX: string = 'GLOBAL';
@@ -248,3 +249,15 @@ export function anythingTo<T>(anything: any): T {
     throw 'Unexpected: value does not exist';
   }
 }
+
+export const rbacRouter = Router();
+
+rbacRouter.get('/editableworkflows', async (req, res, next) => {
+  let userGroups = await getUserGroups(req);
+  //TODO add a real check if workflows editable
+  if (userGroups === undefined || userGroups.length == 0) {
+    res.status(200).send(false);
+  } else {
+    res.status(200).send(true);
+  }
+});

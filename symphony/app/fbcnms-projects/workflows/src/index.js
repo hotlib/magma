@@ -12,7 +12,7 @@
 import ExpressApplication from 'express';
 import proxy from './proxy/proxy';
 import workflowRouter from './routes';
-
+import {rbacRouter} from './proxy/utils';
 const app = ExpressApplication();
 
 async function init() {
@@ -24,6 +24,7 @@ async function init() {
 
   app.use('/', workflowRouter);
   app.use('/proxy', proxyRouter);
+  app.use('/rbac', rbacRouter);
   app.listen(80);
 }
 
